@@ -18,3 +18,4 @@ spring:
 encrypt:
   #openssl rand -base64 32
   key: ${ENCRYPT_KEY:CL4cboqlIweOqt93wjzZi/qjCxcSOYAMgzdKiy6cG2Y=}
+
