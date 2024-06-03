@@ -1,3 +1,4 @@
 rootProject.name = 'sc'
 include 'config'
+include 'eureka'
 

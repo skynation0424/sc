@@ -1,0 +1,13 @@
+server:
+  port: 8761
+eureka:
+  instance:
+    #Eureka 서버 Host. 반드시 FQDN형식으로 구별된 Hostname을 지정해야 함
+    #DNS나 hosts에 등록하지 않고 사용하기 위해 wildcard DNS형식을 이용함
+    #k8s에 pod로 eureka서버를 배포할 때는 hostname을 제거하고,
+    #defaultZone에 service object를 이용한 주소를 지정해야 함: 예) defaultZone: http://eureka-service:8761/eureka/
+    #참고로 hostname을 지정 안하고 defaultZone에 자신을 제외한 Eureka서버를 잘 지정하기만 해도 됨
+    hostname: eureka1.127.0.0.1.nip.io
+  client:
+    serviceUrl:
+      defaultZone: http://eureka2.127.0.0.1.nip.io:8762/eureka/
