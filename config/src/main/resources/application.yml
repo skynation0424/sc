@@ -1,0 +1,21 @@
+server:
+  port: ${service_port:9001}
+spring:
+  application:
+    name: config
+  cloud:
+    config:
+      server:
+        git:
+          uri: ${GIT_URL:https://github.com:443/cna-bootcamp/subride-config.git}
+          username: ${GIT_USERNAME:hiondal}
+          password: ${GIT_TOKEN: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}
+          #password: ${GIT_PASSWORD:passw0rd}
+          search-paths:                      #base directory to search profiles
+            - 'common'            #공통설정
+            - '{application}'     #spring.application.name으로 대체됨
+          default-label: ${GIT_BRANCH:main}      #git branch
+encrypt:
+  #openssl rand -base64 32
+  key: ${ENCRYPT_KEY:CL4cboqlIweOqt93wjzZi/qjCxcSOYAMgzdKiy6cG2Y=}
+
