@@ -3,6 +3,7 @@ def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
 def GIT_BRANCH = "dev"
 def NFS_HOST = "119.81.125.20"
 def NFS_DIR = "data"
+def DOCKER_CREDENTIAL = "credential_cna"
 def TRIVY_CACHE_DIR = "trivy-cache"
 
 /* -------- functions ---------- */
@@ -32,11 +33,14 @@ podTemplate(
 	node("${PIPELINE_ID}") {
         stage("Pre-pull Images") {
             container("podman") {
-                sh "podman pull aquasec/trivy"
-                sh "podman pull lachlansenson/k8s-kubectl"
-                sh "podman pull gradle:jdk17"
-                sh "podman pull mgoltzsche/podman"
-                sh "podman pull hiondal/envsubst"
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
+                    sh 'podman login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
+                    sh "podman pull aquasec/trivy"
+                    sh "podman pull lachlansenson/k8s-kubectl"
+                    sh "podman pull gradle:jdk17"
+                    sh "podman pull mgoltzsche/podman"
+                    sh "podman pull hiondal/envsubst"
+                }
             }
         }
 
@@ -47,8 +51,7 @@ podTemplate(
         baseDir = "config/deployment"
 		//-- Read pipeline.properties and setting variables
 		def props = readProperties  file:"${baseDir}/pipeline.properties"
-		
-		credentialRegistry=props["credential_registry"]
+
 		registry=props["registry"]
 		organization=props["organization"]
 		repository=props["repository"]
@@ -70,7 +73,7 @@ podTemplate(
 			stage("Build Container image") {
 				container("podman") {
 					withCredentials([usernamePassword(
-						credentialsId: "${credentialRegistry}",
+						credentialsId: "${DOCKER_CREDENTIAL}",
 						usernameVariable: 'USER',
 						passwordVariable: 'PASSWORD'
 						)]) {
