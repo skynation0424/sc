@@ -97,9 +97,9 @@ podTemplate(
                 */
 	            container("kubectl") {
                     sh "kubectl run envsubst --image=hiondal/envsubst --restart=Never --command -- /bin/sh -c 'set -a; source ${baseDir}/deploy_env_vars; set +a; envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}'"
-                    sh "kubectl wait --for=condition=complete job/envsubst"
-                    sh "kubectl logs job/envsubst"
-                    sh "kubectl delete job/envsubst"
+                    sh "kubectl wait --for=condition=complete pod/envsubst"
+                    sh "kubectl logs pod/envsubst"
+                    sh "kubectl delete pod/envsubst"
                 }
             }
 
