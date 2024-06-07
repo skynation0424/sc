@@ -19,7 +19,7 @@ podTemplate(
 	],
 	//volume mount: serverPath는 반드시 nfs서버 작성 시 지정한 디렉토리밑에 생성되어 있어야 함
     volumes: [
-    	nfsVolume( mountPath: '/home/gradle/.gradle', serverAddress: '119.81.125.20', serverPath: '/data/gradle', readOnly: false ),
+    	nfsVolume( mountPath: '/home/gradle/.gradle', serverAddress: '119.81.125.20', serverPath: '/data/gradle', readOnly: false )
     ]
 ) 
 
@@ -96,7 +96,7 @@ podTemplate(
                         envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                         cat ${baseDir}/${manifest}
                     """
-                }ls -
+                }
             }
 
 			stage( "Deploy to Cluster" ) {
