@@ -92,7 +92,7 @@ podTemplate(
                         set -a
                         source ${baseDir}/deploy_env_vars
                         set +a
-                        env
+
                         envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                         cat ${baseDir}/${manifest}
                     """
