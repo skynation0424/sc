@@ -8,6 +8,8 @@ def notifySlack(STATUS, COLOR) {
 
 notifySlack("STARTED", "#FFFF00")
 
+def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
+def GIT_BRANCH = "main"
 def NFS_HOST = "119.81.125.20"
 def NFS_DIR = "data"
 def TRIVY_CACHE_DIR = "trivy-cache"
@@ -30,7 +32,7 @@ podTemplate(
 {
 	node(label) {
 		stage("Get Source") {
-			git branch: 'dev', url: 'https://github.com/cna-bootcamp/sc.git'
+			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
         } 
 
         baseDir = "config/deployment"
