@@ -12,7 +12,11 @@ podTemplate(
 	label: label, 
 	containers: [
 		containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+		//containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", ttyEnabled: true,
+            command: "sh",
+            args: "-c 'cp /usr/local/bin/envsubst /usr/bin/envsubst && tail -f /dev/null'"
+        )
 		containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
 		containerTemplate(name: 'podman', image: 'mgoltzsche/podman', ttyEnabled: true, command: 'cat', privileged: true)
 	],
@@ -90,7 +94,7 @@ podTemplate(
 				    sh "set -a"
 				    sh "source ${baseDir}/deploy_env_vars"
 				    sh "set +a"
-				    sh "envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
+				    sh "/usr/bin/envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
 					sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
 					sh "sleep 5"
 				}
