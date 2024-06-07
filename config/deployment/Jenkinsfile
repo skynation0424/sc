@@ -88,12 +88,14 @@ podTemplate(
 
             stage( "Generate deployment yaml" ) {
             	container("envsubst") {
-                    //sh "set -a"
-                    sh "source ${baseDir}/deploy_env_vars"
-                    sh "env"
-                    //sh "set +a"
-                    sh "envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
-                    sh "cat ${baseDir}/${manifest}"
+            	    sh '''
+                        set -a
+                        source ${baseDir}/deploy_env_vars
+                        set +a
+                        env
+                        envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
+                        cat ${baseDir}/${manifest}
+                    '''
                 }
             }
 
