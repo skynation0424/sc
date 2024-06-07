@@ -87,11 +87,19 @@ podTemplate(
 			}
 
             stage( "Generate deployment yaml" ) {
+            /*
             	container("envsubst") {
                     sh "set -a"
                     sh "source ${baseDir}/deploy_env_vars"
                     sh "set +a"
                     sh "/usr/bin/envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
+                }
+                */
+	            container("kubectl") {
+                    sh "kubectl run envsubst --image=hiondal/envsubst --restart=Never --command -- /bin/sh -c 'set -a; source ${baseDir}/deploy_env_vars; set +a; envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}'"
+                    sh "kubectl wait --for=condition=complete job/envsubst"
+                    sh "kubectl logs job/envsubst"
+                    sh "kubectl delete job/envsubst"
                 }
             }
 
