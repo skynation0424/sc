@@ -75,15 +75,17 @@ podTemplate(
 			}
 
 			stage("Scan Image Vulnerability") {
-				container("trivy"){
-					sh """
-					    trivy image \
-					        --cache-dir /${TRIVY_CACHE_DIR} \
-					        --scanners vuln \
-					        --severity HIGH,CRITICAL \
-					        ${registry}/${organization}/${repository}:${tag}
-				    """
-				}
+			    timeout(time: 10, unit: 'MINUTES') {    //최초에 오래 걸려 timeout시간을 늘려줌
+                    container("trivy"){
+                        sh """
+                            trivy image \
+                                --cache-dir /${TRIVY_CACHE_DIR} \
+                                --scanners vuln \
+                                --severity HIGH,CRITICAL \
+                                ${registry}/${organization}/${repository}:${tag}
+                        """
+                    }
+			    }
 			}
 
 			try {
