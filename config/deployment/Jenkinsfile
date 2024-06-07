@@ -1,5 +1,10 @@
 
-def label = "config-${env.BUILD_NUMBER}"
+def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
+def GIT_BRANCH = "main"
+def NFS_HOST = "119.81.125.20"
+def NFS_DIR = "data"
+def TRIVY_CACHE_DIR = "trivy-cache"
+def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 
 /* -------- functions ---------- */
 def notifySlack(STATUS, COLOR) {
@@ -8,13 +13,8 @@ def notifySlack(STATUS, COLOR) {
 
 notifySlack("STARTED", "#FFFF00")
 
-def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
-def GIT_BRANCH = "main"
-def NFS_HOST = "119.81.125.20"
-def NFS_DIR = "data"
-def TRIVY_CACHE_DIR = "trivy-cache"
 podTemplate(
-	label: label, 
+	label: ${PIPELINE_ID},
 	containers: [
 		containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
 		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
