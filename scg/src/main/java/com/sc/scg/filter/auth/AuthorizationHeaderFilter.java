@@ -34,11 +34,13 @@ public class AuthorizationHeaderFilter extends AbstractGatewayFilterFactory<Auth
 
     @Override
     public GatewayFilter apply(Config config) {
-        log.info("************* Check Authorization");
+        //log.info("************* Check Authorization");
         return (exchange, chain) -> {
             ServerHttpRequest request = exchange.getRequest();
 
-            if (request.getURI().getPath().startsWith("/api/auth")) {
+            if (request.getURI().getPath().startsWith("/api/auth") ||
+                    request.getURI().getPath().startsWith("/api/subrecommend/detail")) {
+                log.info("*** Skip check authentication: "+request.getURI().getPath());
                 return chain.filter(
                         exchange.mutate().request(
                                 exchange.getRequest().mutate().build()
