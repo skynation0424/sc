@@ -1,4 +1,4 @@
-def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
+def LABEL_PREFIX = "config"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
 def GIT_BRANCH = "dev"
 def NFS_HOST = "119.81.125.20"
@@ -14,7 +14,7 @@ notifySlack("STARTED", "#FFFF00")
 
 podTemplate(
 	//label: "${PIPELINE_ID}",
-	label: "config-${env.BUILD_NUMBER}",
+	label: "${LABEL_PREFIX}-${env.BUILD_NUMBER}",
 	containers: [
 		containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
 		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
