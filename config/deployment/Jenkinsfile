@@ -7,7 +7,7 @@ def DOCKER_CREDENTIAL = "credential_cna"
 def TRIVY_CACHE_DIR = "trivy-cache"
 
 def IMAGE_TRIVY = "aquasec/trivy"
-def IMAGE_KUBECTL = "bitnami/kubectl"
+def IMAGE_KUBECTL = "lachlanevenson/k8s-kubectl"
 def IMAGE_GRADLE = "gradle:jdk17"
 def IMAGE_PODMAN = "mgoltzsche/podman"
 def IMAGE_ENVSUBST = "hiondal/envsubst"
