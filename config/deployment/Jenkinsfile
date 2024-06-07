@@ -54,7 +54,7 @@ podTemplate(
 		manifest=props["manifest"]
 		selector_key=props["selector_key"]
 		selector_val=props["selector_val"]
-
+/*
         stage("Pre-pull Images") {
             container("podman") {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
@@ -67,7 +67,7 @@ podTemplate(
                 }
             }
         }
-
+*/
 		try {
 			stage("Build Jar") {
 				container("gradle") {
