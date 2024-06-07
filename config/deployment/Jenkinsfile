@@ -76,7 +76,7 @@ podTemplate(
 				container("trivy"){
 					sh """
 					    trivy image \
-					        --cache-dir \${TRIVY_CACHE_DIR} \
+					        --cache-dir ${TRIVY_CACHE_DIR} \
 					        --scanners vuln \
 					        --concurrency 10 \
 					        --severity HIGH,CRITICAL \
