@@ -90,6 +90,7 @@ podTemplate(
             	container("envsubst") {
                     //sh "set -a"
                     sh "source ${baseDir}/deploy_env_vars"
+                    sh "env"
                     //sh "set +a"
                     sh "envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
                     sh "cat ${baseDir}/${manifest}"
