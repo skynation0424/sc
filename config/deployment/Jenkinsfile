@@ -9,7 +9,7 @@ def TRIVY_CACHE_DIR = "trivy-cache"
 def IMAGE_TRIVY = "bitnami/trivy"
 def IMAGE_KUBECTL = "bitnami/kubectl"
 def IMAGE_GRADLE = "gradle:jdk17"
-def IMAGE_PODMAN = "mattermost/podman"
+def IMAGE_PODMAN = "mattermost/podman:1.8.0"
 def IMAGE_ENVSUBST = "hiondal/envsubst"
 
 /* -------- functions ---------- */
