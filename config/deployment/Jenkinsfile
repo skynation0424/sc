@@ -6,6 +6,12 @@ def NFS_DIR = "data"
 def DOCKER_CREDENTIAL = "credential_cna"
 def TRIVY_CACHE_DIR = "trivy-cache"
 
+def IMAGE_TRIVY = "aquasec/trivy"
+def IMAGE_KUBECTL = "lachlanevenson/k8s-kubectl"
+def IMAGE_GRADLE = "gradle:jdk17"
+def IMAGE_PODMAN = "mgoltzsche/podman"
+def IMAGE_ENVSUBST = "hiondal/envsubst"
+
 /* -------- functions ---------- */
 def notifySlack(STATUS, COLOR) {
 	//slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
@@ -16,11 +22,11 @@ notifySlack("STARTED", "#FFFF00")
 podTemplate(
 	label: "${PIPELINE_ID}",
 	containers: [
-		containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-		containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-		containerTemplate(name: 'podman', image: 'mgoltzsche/podman', ttyEnabled: true, command: 'cat', privileged: true),
-		containerTemplate(name: 'envsubst', image: 'hiondal/envsubst', command: 'sleep', args: '1h')
+		containerTemplate(name: "trivy", image: "${IMAGE_TRIVY}", ttyEnabled: true, command: "cat"),
+		containerTemplate(name: "kubectl", image: "${IMAGE_KUBECTL}", command: "cat", ttyEnabled: true),
+		containerTemplate(name: "gradle", image: "${IMAGE_GRADLE}", ttyEnabled: true, command: "cat"),
+		containerTemplate(name: 'podman', image: "${IMAGE_PODMAN}", ttyEnabled: true, command: 'cat', privileged: true),
+		containerTemplate(name: 'envsubst', image: "${IMAGE_ENVSUBST}", command: 'sleep', args: '1h')
 	],
 	//volume mount: serverPath는 반드시 nfs서버 작성 시 지정한 디렉토리밑에 생성되어 있어야 함
     volumes: [
@@ -35,11 +41,11 @@ podTemplate(
             container("podman") {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
                     sh 'podman login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
-                    sh "podman pull aquasec/trivy"
-                    sh "podman pull lachlansenson/k8s-kubectl"
-                    sh "podman pull gradle:jdk17"
-                    sh "podman pull mgoltzsche/podman"
-                    sh "podman pull hiondal/envsubst"
+                    sh "podman pull ${IMAGE_TRIVY}"
+                    sh "podman pull ${IMAGE_KUBECTL}"
+                    sh "podman pull ${IMAGE_GRADLE}"
+                    sh "podman pull ${IMAGE_PODMAN}"
+                    sh "podman pull ${IMAGE_ENVSUBST}"
                 }
             }
         }
