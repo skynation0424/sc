@@ -25,17 +25,19 @@ podTemplate(
 {
 	node(label) {
 		stage("Get Source") {
-			git branch: 'main', url: 'https://github.com/subride/Backend.git'
+			git branch: 'main', url: 'https://github.com/cna-bootcamp/sc.git'
         } 
 
+        baseDir = "config/deployment"
 		//-- Read pipeline.properties and setting variables
-		def props = readProperties  file:"subride/deployment/pipeline.properties"
+		def props = readProperties  file:"${baseDir}/pipeline.properties"
 		
-		credentialRegistry=props["credentialRegistry"]
+		credentialRegistry=props["credential_registry"]
 		registry=props["registry"]
 		organization=props["organization"]
 		repository=props["repository"]
 		tag=props["tag"]
+		srcDir=props["src_dir"]
 		namespace=props["namespace"]
 		manifest=props["manifest"]
 		selector_key=props["selector_key"]
@@ -43,9 +45,9 @@ podTemplate(
 
 		try {
 			stage("Build Jar") {
-				container("maven") {
+				container("gradle") {
 					sh 'echo "Build jar under target directory"'
-					sh "mvn clean package -f subride -DskipTests"
+					sh "gradle build -x test"
 				}
 			}
 
@@ -58,7 +60,7 @@ podTemplate(
 						)]) {
 						    sh 'echo user "$USER" pasword "$PASSWORD"'
 						    sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-							sh "podman build -f ./subride/deployment/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${repository}.jar subride"
+							sh "podman build -f ./${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${repository}.jar ${srcDir}"
 							sh "sleep 2"
 							sh "podman push ${registry}/${organization}/${repository}:${tag}"
 							sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
@@ -85,7 +87,11 @@ podTemplate(
 
 			stage( "Deploy to Cluster" ) {
 				container("kubectl") {
-					sh "kubectl apply -f ${manifest} -n ${namespace}"
+				    sh "set -a"
+				    sh "source ${baseDir}/deploy_env_vars"
+				    sh "set +a"
+				    sh "envsubst < ${baseDir}/deploy.yaml.template > ${baseDir}/${manifest}"
+					sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
 					sh "sleep 5"
 				}
 			}

@@ -1,5 +1,5 @@
 server:
-  port: ${service_port:9001}
+  port: ${SERVER_PORT:9001}
 spring:
   application:
     name: config
