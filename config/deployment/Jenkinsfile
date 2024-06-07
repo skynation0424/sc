@@ -91,7 +91,7 @@ podTemplate(
                     sh "set -a"
                     sh "source ${baseDir}/deploy_env_vars"
                     sh "set +a"
-                    sh "/usr/bin/envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
+                    sh "envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
                 }
             }
 
