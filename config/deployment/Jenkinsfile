@@ -18,7 +18,7 @@ podTemplate(
 	],
 	//volume mount
     volumes: [
-    	nfsVolume( mountPath: '/root/.m2', serverAddress: '119.81.125.20', serverPath: '/users/data/gradle', readOnly: false ),
+    	nfsVolume( mountPath: '/root/.gradle', serverAddress: '119.81.125.20', serverPath: '/users/data/gradle', readOnly: false ),
     ]
 ) 
 
