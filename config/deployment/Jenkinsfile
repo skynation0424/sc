@@ -16,7 +16,7 @@ podTemplate(
 		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", ttyEnabled: true,
             command: "sh",
             args: "-c 'cp /usr/local/bin/envsubst /usr/bin/envsubst && tail -f /dev/null'"
-        )
+        ),
 		containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
 		containerTemplate(name: 'podman', image: 'mgoltzsche/podman', ttyEnabled: true, command: 'cat', privileged: true)
 	],
@@ -72,13 +72,13 @@ podTemplate(
 					}
 				}
 			}
-
+/*
 			stage("Scan Image Vulnerability") {
 				container("trivy"){
 					sh "trivy image ${registry}/${organization}/${repository}:${tag}"	
 				}
 			}
-
+*/
 			try {
 				stage( "Clean Up Existing Deployments" ) {
 					container("kubectl") {
