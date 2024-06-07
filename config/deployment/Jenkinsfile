@@ -40,7 +40,7 @@ podTemplate(
         stage("Pre-pull Images") {
             container("podman") {
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh 'podman login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
+                    sh 'podman login docker.io -u $DOCKERHUB_USER -p $DOCKERHUB_PASS'
                     sh "podman pull ${IMAGE_TRIVY}"
                     sh "podman pull ${IMAGE_KUBECTL}"
                     sh "podman pull ${IMAGE_GRADLE}"
