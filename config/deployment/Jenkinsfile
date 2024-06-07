@@ -90,7 +90,7 @@ podTemplate(
 				    sh "set -a"
 				    sh "source ${baseDir}/deploy_env_vars"
 				    sh "set +a"
-				    sh "envsubst < ${baseDir}/deploy.yaml.template > ${baseDir}/${manifest}"
+				    sh "envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}"
 					sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
 					sh "sleep 5"
 				}
