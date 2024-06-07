@@ -28,7 +28,7 @@ spec:
           - secretRef:
               name: ${application_name}
           ports:
-            - name: container_port
+            - name: container-port
               containerPort: ${container_port}
           resources:
             requests:
