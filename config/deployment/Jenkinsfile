@@ -1,4 +1,4 @@
-def LABEL_PREFIX = "config"
+def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
 def GIT_BRANCH = "dev"
 def NFS_HOST = "119.81.125.20"
@@ -13,8 +13,7 @@ def notifySlack(STATUS, COLOR) {
 notifySlack("STARTED", "#FFFF00")
 
 podTemplate(
-	//label: "${PIPELINE_ID}",
-	label: "${LABEL_PREFIX}-${env.BUILD_NUMBER}",
+	label: ${PIPELINE_ID},
 	containers: [
 		containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
 		containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
@@ -30,8 +29,16 @@ podTemplate(
 ) 
 
 {
-	node(label) {
-
+	node(${PIPELINE_ID}) {
+        stage("Pre-pull Images") {
+            container("podman") {
+                sh "podman pull aquasec/trivy"
+                sh "podman pull lachlansenson/k8s-kubectl"
+                sh "podman pull gradle:jdk17"
+                sh "podman pull mgoltzsche/podman"
+                sh "podman pull hiondal/envsubst"
+            }
+        }
 
 		stage("Get Source") {
 			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
