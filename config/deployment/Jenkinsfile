@@ -72,7 +72,7 @@ podTemplate(
 
 			stage("Scan Image Vulnerability") {
 				container("trivy"){
-					sh "trivy image ${registry}/${organization}/${repository}:${tag}"	
+					sh "trivy image --scanners vuln ${registry}/${organization}/${repository}:${tag}"
 				}
 			}
 
