@@ -1,10 +1,9 @@
-
+def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
-def GIT_BRANCH = "main"
+def GIT_BRANCH = "dev"
 def NFS_HOST = "119.81.125.20"
 def NFS_DIR = "data"
 def TRIVY_CACHE_DIR = "trivy-cache"
-def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 
 /* -------- functions ---------- */
 def notifySlack(STATUS, COLOR) {
@@ -31,6 +30,16 @@ podTemplate(
 
 {
 	node(label) {
+	    stage("Pre-pull Images") {
+            container("podman") {
+                sh "podman pull aquasec/trivy"
+                sh "podman pull lachlansenson/k8s-kubectl"
+                sh "podman pull gradle:jdk17"
+                sh "podman pull mgoltzsche/podman"
+                sh "podman pull hiondal/envsubst"
+            }
+        }
+
 		stage("Get Source") {
 			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
         } 
