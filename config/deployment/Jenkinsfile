@@ -31,15 +31,7 @@ podTemplate(
 
 {
 	node(label) {
-	    stage("Pre-pull Images") {
-            container("podman") {
-                sh "podman pull aquasec/trivy"
-                sh "podman pull lachlansenson/k8s-kubectl"
-                sh "podman pull gradle:jdk17"
-                sh "podman pull mgoltzsche/podman"
-                sh "podman pull hiondal/envsubst"
-            }
-        }
+
 
 		stage("Get Source") {
 			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
