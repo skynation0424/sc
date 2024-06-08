@@ -1,6 +1,6 @@
 def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
-def GIT_BRANCH = "main"
+def GIT_BRANCH = "dev"
 def NFS_HOST = "119.81.125.20"
 def NFS_DIR = "data"
 def DOCKER_CREDENTIAL = "credential_cna"
@@ -45,6 +45,7 @@ podTemplate(
 		//-- Read pipeline.properties and setting variables
 		def props = readProperties  file:"${baseDir}/pipeline.properties"
 
+        artifactoryFile=props["artifactory_file"]
 		registry=props["registry"]
 		organization=props["organization"]
 		repository=props["repository"]
@@ -72,7 +73,7 @@ podTemplate(
 						)]) {
 						    sh 'echo user "$USER" pasword "$PASSWORD"'
 						    sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-							sh "podman build -f ./${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${repository}.jar ${srcDir}"
+							sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${srcDir}"
 							sh "sleep 2"
 							sh "podman push ${registry}/${organization}/${repository}:${tag}"
 							sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
