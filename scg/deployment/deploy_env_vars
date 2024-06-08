@@ -1,0 +1,14 @@
+namespace=ondal
+application_name=scg
+replicas=1
+server_port=19080
+container_port=18080
+image_pull_secret=dockerhub
+image_pull_policy=Always
+image_path=docker.io/hiondal/scg:latest
+resources_requests_cpu=500m
+resources_requests_memory=512Mi
+resources_limits_cpu=500m
+resources_limits_memory=1024Mi
+service_type=ClusterIP
+ingress_host=scg.119.81.125.20.nip.io

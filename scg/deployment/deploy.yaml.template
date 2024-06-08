@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${application_name}
+  namespace: ${namespace}
+  labels:
+    app: ${application_name}
+spec:
+  selector:
+    matchLabels:
+      app: ${application_name}
+  replicas: ${replicas}
+  template:
+    metadata:
+      name: ${application_name}
+      labels:
+        app: ${application_name}
+    spec:
+      imagePullSecrets:
+        - name: ${image_pull_secret}
+      containers:
+        - name: ${application_name}
+          image: ${image_path}
+          imagePullPolicy: ${image_pull_policy}
+          envFrom:
+          - configMapRef:
+              name: ${application_name}
+          - secretRef:
+              name: ${application_name}
+          ports:
+            - name: container-port
+              containerPort: ${container_port}
+          resources:
+            requests:
+              cpu: ${resources_requests_cpu}
+              memory: ${resources_requests_memory}
+            limits:
+              cpu: ${resources_limits_cpu}
+              memory: ${resources_limits_memory}
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ${application_name}
+  namespace: ${namespace}
+data:
+  SERVER_PORT: "${server_port}"
+  EUREKA_SERVERS: http://eureka:18080/eureka/
+  ALLOWED_ORIGINS: http://localhost:3000
+---
+
+kind: Secret
+apiVersion: v1
+metadata:
+  name: ${application_name}
+  namespace: ${namespace}
+type: Opaque
+stringData:
+  JWT_SECRET: 8O2HQ13etL2BWZvYOiWsJ5uWFoLi6NBUG8divYVoCgtHVvlk3dqRksMl16toztDUeBTSIuOOPvHIrYq11G2BwQ==
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${application_name}
+  namespace: ${namespace}
+spec:
+  type: ${service_type}
+  selector:
+    app: ${application_name}
+  ports:
+    - name: ${application_name}
+      port: ${container_port}
+      targetPort: ${server_port}
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${application_name}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${ingress_host}
+      http:
+        paths:
+          - path: /(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ${application_name}
+                port: 
+                  number: ${container_port}
+                  

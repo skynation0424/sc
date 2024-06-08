@@ -4,7 +4,7 @@ spring:
   application:
     name: scg
   jwt:
-    secret: 8O2HQ13etL2BWZvYOiWsJ5uWFoLi6NBUG8divYVoCgtHVvlk3dqRksMl16toztDUeBTSIuOOPvHIrYq11G2BwQ==
+    secret: ${JWT_SECRET:8O2HQ13etL2BWZvYOiWsJ5uWFoLi6NBUG8divYVoCgtHVvlk3dqRksMl16toztDUeBTSIuOOPvHIrYq11G2BwQ==}
 
 eureka:
   client:
@@ -29,7 +29,7 @@ spring.cloud.gateway:
           - GET
       '[/api/**]':
         allowedOrigins:
-          - "http://localhost:3000"
+          - ${ALLOWED_ORIGINS:"http://localhost:3000"}
         allowedMethods:
           - GET
           - PUT
