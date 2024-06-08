@@ -54,20 +54,7 @@ podTemplate(
 		manifest=props["manifest"]
 		selector_key=props["selector_key"]
 		selector_val=props["selector_val"]
-/*
-        stage("Pre-pull Images") {
-            container("podman") {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIAL}", usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASS')]) {
-                    sh "podman login ${registry} -u $DOCKERHUB_USER -p $DOCKERHUB_PASS"
-                    sh "podman pull ${IMAGE_TRIVY}"
-                    sh "podman pull ${IMAGE_KUBECTL}"
-                    sh "podman pull ${IMAGE_GRADLE}"
-                    sh "podman pull ${IMAGE_PODMAN}"
-                    sh "podman pull ${IMAGE_ENVSUBST}"
-                }
-            }
-        }
-*/
+
 		try {
 			stage("Build Jar") {
 				container("gradle") {
