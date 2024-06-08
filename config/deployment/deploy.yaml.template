@@ -46,7 +46,7 @@ metadata:
   name: ${application_name}
   namespace: ${namespace}
 data:
-  SERVER_PORT: ${server_port}
+  SERVER_PORT: "${server_port}"
   GIT_URL: https://github.com:443/cna-bootcamp/subride-config.git
   GIT_USERNAME: hiondal
   GIT_BRANCH: main

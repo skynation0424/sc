@@ -46,7 +46,7 @@ metadata:
   name: ${application_name}
   namespace: ${namespace}
 data:
-  SERVER_PORT: "8761"
+  SERVER_PORT: ${server_port}
   EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${application_name}:
 
 ---
