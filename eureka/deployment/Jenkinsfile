@@ -13,6 +13,8 @@ def IMAGE_GRADLE = "gradle:jdk17"
 def IMAGE_PODMAN = "mgoltzsche/podman"
 def IMAGE_ENVSUBST = "hiondal/envsubst"
 
+def BASE_DIR = "eureka/deployment"
+
 /* -------- functions ---------- */
 def notifySlack(STATUS, COLOR) {
 	//slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
@@ -38,11 +40,13 @@ podTemplate(
 
 {
 	node("${PIPELINE_ID}") {
+		/*
 		stage("Get Source") {
 			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
         } 
+        */
 
-        baseDir = "config/deployment"
+        baseDir = "${BASE_DIR}"
 		//-- Read pipeline.properties and setting variables
 		def props = readProperties  file:"${baseDir}/pipeline.properties"
 
