@@ -40,11 +40,10 @@ podTemplate(
 
 {
 	node("${PIPELINE_ID}") {
-		/*
+
 		stage("Get Source") {
 			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
         } 
-        */
 
         baseDir = "${BASE_DIR}"
 		//-- Read pipeline.properties and setting variables
