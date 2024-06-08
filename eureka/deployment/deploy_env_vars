@@ -1,14 +1,14 @@
 namespace=ondal
-application_name=config
+application_name=eureka
 replicas=1
 server_port=8761
 container_port=18080
 image_pull_secret=dockerhub
 image_pull_policy=Always
-image_path=docker.io/hiondal/config:latest
+image_path=docker.io/hiondal/eureka:latest
 resources_requests_cpu=500m
 resources_requests_memory=512Mi
 resources_limits_cpu=500m
 resources_limits_memory=1024Mi
 service_type=ClusterIP
-ingress_host=config.119.81.125.20.nip.io
+ingress_host=eureka.119.81.125.20.nip.io

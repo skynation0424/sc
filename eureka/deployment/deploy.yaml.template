@@ -47,7 +47,7 @@ metadata:
   namespace: ${namespace}
 data:
   SERVER_PORT: ${server_port}
-  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${application_name}:
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${application_name}:${container_port}
 
 ---
 
@@ -58,8 +58,6 @@ metadata:
   namespace: ${namespace}
 type: Opaque
 stringData:
-  GIT_TOKEN: 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
-  ENCRYPT_KEY: CL4cboqlIweOqt93wjzZi/qjCxcSOYAMgzdKiy6cG2Y=
 
 ---
 
@@ -75,7 +73,7 @@ spec:
   ports:
     - name: ${application_name}
       port: ${container_port}
-      targetPort: ${container_port}
+      targetPort: ${server_port}
 
 ---
 
