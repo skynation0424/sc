@@ -77,7 +77,7 @@ podTemplate(
 						)]) {
 						    sh 'echo user "$USER" pasword "$PASSWORD"'
 						    sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-							sh "podman build -f ./${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${srcDir}"
+							sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${srcDir}"
 							sh "sleep 2"
 							sh "podman push ${registry}/${organization}/${repository}:${tag}"
 							sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
