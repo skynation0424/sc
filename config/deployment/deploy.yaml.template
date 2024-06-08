@@ -77,7 +77,7 @@ spec:
   ports:
     - name: ${application_name}
       port: ${container_port}
-      targetPort: ${container_port}
+      targetPort: ${server_port}
 
 ---
 
