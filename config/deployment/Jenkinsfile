@@ -1,6 +1,6 @@
 def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
-def GIT_BRANCH = "dev"
+def GIT_BRANCH = "main"
 def NFS_HOST = "119.81.125.20"
 def NFS_DIR = "data"
 def DOCKER_CREDENTIAL = "credential_cna"
