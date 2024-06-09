@@ -69,11 +69,22 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
+                    withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            gradle sonar -Dsonar.projectKey=sc-config \
+                                -Dsonar.host.url=http://sonarqube \
+                                -Dsonar.login=${SONAR_TOKEN}
+                                -Dsonar.java.binaries=${SRC_DIR}/build/libs/${artifactoryFile}
+                        """
+                    }
+
+                    /*
                     withSonarQubeEnv("${sonarqubeServerId}") {
                         sh "*** Jar Path: ${env.WORKSPACE}/${SRC_DIR}/build/libs/${artifactoryFile}"
                         sh "ls -al ${env.WORKSPACE}/${SRC_DIR}/build/libs"
                         sh "gradle sonar -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${env.WORKSPACE}/${SRC_DIR}/build/libs/${artifactoryFile}"
                     }
+                    */
                 }
             }
 
