@@ -110,14 +110,14 @@ podTemplate(
 
                         echo "Vulnerability counts: ${vulnerabilityCounts}"
 
-                       if (vulnerabilityCounts["CRITICAL"] > 0) {
-                           echo "Critical vulnerabilities found. Aborting the pipeline."
-                           currentBuild.result = 'FAILURE'
-                           notifySlack("Vulnerability scan failed.", "#FF0000")
-                           error "Critical vulnerabilities found."
-                       } else {
-                           echo "No critical vulnerabilities found. Continuing the pipeline."
-                       }
+                        if (vulnerabilityCounts["CRITICAL"] > 0) {
+                            echo "Critical vulnerabilities found. Aborting the pipeline."
+                            currentBuild.result = 'FAILURE'
+                            notifySlack("Vulnerability scan failed.", "#FF0000")
+                            error "Critical vulnerabilities found."
+                        } else {
+                            echo "No critical vulnerabilities found. Continuing the pipeline."
+                        }
                     }
                 }
             }
