@@ -20,6 +20,15 @@ podTemplate(
 
 {
     node("${PIPELINE_ID}") {
+        stage("Prepare cache volumes") {
+            container("kubectl") {
+                sh """
+                    ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
+                    ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
+                """
+            }
+        }
+
         stage("Get Source") {
             checkout scm
         }
@@ -56,15 +65,6 @@ podTemplate(
         sonarJavaBinaries = props["sonar_java_binaries"]
 
         try {
-            stage("Prepare cache volumes") {
-                container("kubectl") {
-                    sh """
-                        ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
-                        ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
-                    """
-                }
-            }
-
             stage("Build Jar") {
                 container("gradle") {
                     sh 'echo "Build jar under build directory"'
