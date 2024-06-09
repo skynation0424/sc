@@ -99,6 +99,7 @@ podTemplate(
                             echo "Vulnerability scan failed. Aborting the pipeline."
                             currentBuild.result = 'FAILURE'
                             notifySlack("Vulnerability scan failed.", "#FF0000")
+                            error "Aborted pipeline"
                         }
                     }
                 }
