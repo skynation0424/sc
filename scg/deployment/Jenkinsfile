@@ -1,7 +1,5 @@
-def PIPELINE_ID = "scg-${env.BUILD_NUMBER}"
-
-def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
-def GIT_BRANCH = "dev"
+def SRC_DIR = "config"
+def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 def NFS_HOST = "165.192.76.211"
 def NFS_DIR = "data"
 def DOCKER_CREDENTIAL = "credential_cna"
@@ -13,81 +11,81 @@ def IMAGE_GRADLE = "gradle:jdk17"
 def IMAGE_PODMAN = "mgoltzsche/podman"
 def IMAGE_ENVSUBST = "hiondal/envsubst"
 
-def BASE_DIR = "scg/deployment"
-
-/* -------- functions ---------- */
-def notifySlack(STATUS, COLOR) {
-	//slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
-}
-
 notifySlack("STARTED", "#FFFF00")
 
 podTemplate(
-	label: "${PIPELINE_ID}",
-	containers: [
-		containerTemplate(name: "trivy", image: "${IMAGE_TRIVY}", ttyEnabled: true, command: "cat"),
-		containerTemplate(name: "kubectl", image: "${IMAGE_KUBECTL}", command: "cat", ttyEnabled: true),
-		containerTemplate(name: "gradle", image: "${IMAGE_GRADLE}", ttyEnabled: true, command: "cat"),
-		containerTemplate(name: 'podman', image: "${IMAGE_PODMAN}", ttyEnabled: true, command: 'cat', privileged: true),
-		containerTemplate(name: 'envsubst', image: "${IMAGE_ENVSUBST}", command: 'sleep', args: '1h')
-	],
-	//volume mount: serverPath는 반드시 nfs서버 작성 시 지정한 디렉토리밑에 생성되어 있어야 함
+    label: "${PIPELINE_ID}",
+    containers: [
+        containerTemplate(name: "trivy", image: "${IMAGE_TRIVY}", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: "kubectl", image: "${IMAGE_KUBECTL}", command: "cat", ttyEnabled: true),
+        containerTemplate(name: "gradle", image: "${IMAGE_GRADLE}", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: 'podman', image: "${IMAGE_PODMAN}", ttyEnabled: true, command: 'cat', privileged: true),
+        containerTemplate(name: 'envsubst', image: "${IMAGE_ENVSUBST}", command: 'sleep', args: '1h')
+    ],
     volumes: [
-    	nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/gradle", readOnly: false ),
-    	nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}", readOnly: false)
+        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/gradle", readOnly: false ),
+        nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}", readOnly: false)
     ]
-) 
+)
 
 {
-	node("${PIPELINE_ID}") {
+    node("${PIPELINE_ID}") {
+        stage("Get Source") {
+            checkout scm
+        }
 
-		stage("Get Source") {
-			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
-        } 
+        //---- 소스 변경 여부 검사
+        def hasChangesInConfig = checkChangesInDirectory("${SRC_DIR}")
 
-        baseDir = "${BASE_DIR}"
-		//-- Read pipeline.properties and setting variables
-		def props = readProperties  file:"${baseDir}/pipeline.properties"
+        if (!hasChangesInConfig) {
+            echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
+            currentBuild.result = 'SUCCESS'
+            notifySlack("SKIPPED", "#00FF00")
+            return
+        }
+        //------------------------------
 
-        artifactoryFile = props["artifactory_file"]
-		registry=props["registry"]
-		organization=props["organization"]
-		repository=props["repository"]
-		tag=props["tag"]
-		srcDir=props["src_dir"]
-		namespace=props["namespace"]
-		manifest=props["manifest"]
-		selector_key=props["selector_key"]
-		selector_val=props["selector_val"]
+        baseDir = "${SRC_DIR}/deployment"
+        def props = readProperties  file:"${baseDir}/pipeline.properties"
 
-		try {
-			stage("Build Jar") {
-				container("gradle") {
-					sh 'echo "Build jar under target directory"'
-					sh "gradle :${srcDir}:build -x test"
-				}
-			}
+        artifactoryFile=props["artifactory_file"]
+        registry=props["registry"]
+        organization=props["organization"]
+        repository=props["repository"]
+        tag=props["tag"]
+        namespace=props["namespace"]
+        manifest=props["manifest"]
+        selector_key=props["selector_key"]
+        selector_val=props["selector_val"]
 
-			stage("Build Container image") {
-				container("podman") {
-					withCredentials([usernamePassword(
-						credentialsId: "${DOCKER_CREDENTIAL}",
-						usernameVariable: 'USER',
-						passwordVariable: 'PASSWORD'
-						)]) {
-						    sh 'echo user "$USER" pasword "$PASSWORD"'
-						    sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-							sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${srcDir}"
-							sh "sleep 2"
-							sh "podman push ${registry}/${organization}/${repository}:${tag}"
-							sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
-							sh "podman push ${registry}/${organization}/${repository}:latest"
-					}
-				}
-			}
+        try {
+            stage("Build Jar") {
+                container("gradle") {
+                    sh 'echo "Build jar under target directory"'
+                    sh "gradle :${SRC_DIR}:build -x test"
+                }
+            }
 
-			stage("Scan Image Vulnerability") {
-			    timeout(time: 10, unit: 'MINUTES') {    //최초에 오래 걸려 timeout시간을 늘려줌
+            stage("Build Container image") {
+                container("podman") {
+                    withCredentials([usernamePassword(
+                        credentialsId: "${DOCKER_CREDENTIAL}",
+                        usernameVariable: 'USER',
+                        passwordVariable: 'PASSWORD'
+                        )]) {
+                            sh 'echo user "$USER" pasword "$PASSWORD"'
+                            sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${SRC_DIR}"
+                            sh "sleep 2"
+                            sh "podman push ${registry}/${organization}/${repository}:${tag}"
+                            sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
+                            sh "podman push ${registry}/${organization}/${repository}:latest"
+                    }
+                }
+            }
+
+            stage("Scan Image Vulnerability") {
+                timeout(time: 10, unit: 'MINUTES') {
                     container("trivy"){
                         sh """
                             trivy image \
@@ -97,22 +95,22 @@ podTemplate(
                                 ${registry}/${organization}/${repository}:${tag}
                         """
                     }
-			    }
-			}
+                }
+            }
 
-			try {
-				stage( "Clean Up Existing Deployments" ) {
-					container("kubectl") {
-						sh "kubectl delete deploy -n ${namespace} --selector=${selector_key}=${selector_val}"
-					}
-				}
-			} catch(e) { 
-				echo "No existed Deployments"
-			}
+            try {
+                stage( "Clean Up Existing Deployments" ) {
+                    container("kubectl") {
+                        sh "kubectl delete deploy -n ${namespace} --selector=${selector_key}=${selector_val}"
+                    }
+                }
+            } catch(e) {
+                echo "No existed Deployments"
+            }
 
             stage( "Generate deployment yaml" ) {
-            	container("envsubst") {
-            	    sh """
+                container("envsubst") {
+                    sh """
                         set -a
                         source ${baseDir}/deploy_env_vars
                         set +a
@@ -123,19 +121,46 @@ podTemplate(
                 }
             }
 
-			stage( "Deploy to Cluster" ) {
-				container("kubectl") {
-				    sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
-					sh "sleep 5"
-				}
-			}
+            stage( "Deploy to Cluster" ) {
+                container("kubectl") {
+                    sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
+                    sh "sleep 5"
+                }
+            }
 
-	        notifySlack("${currentBuild.currentResult}", "#00FF00")
-			echo "**** FINISH ALL STAGES : SUCCESS"
-		
-		} catch(e) {
-			currentBuild.result = "FAILED"
-            notifySlack("${currentBuild.currentResult}", "#FF0000")            
-		}
-	}
+            notifySlack("${currentBuild.currentResult}", "#00FF00")
+            echo "**** FINISH ALL STAGES : SUCCESS"
+
+        } catch(e) {
+            currentBuild.result = "FAILED"
+            notifySlack("${currentBuild.currentResult}", "#FF0000")
+        }
+    }
+}
+
+/* -------- functions ---------- */
+def notifySlack(STATUS, COLOR) {
+    //slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
+}
+
+def checkChangesInDirectory(String directory) {
+    def changeLogSets = currentBuild.changeSets
+    def hasChangesInDirectory = false
+
+    for (int i = 0; i < changeLogSets.size(); i++) {
+        def entries = changeLogSets[i].items
+        for (int j = 0; j < entries.length; j++) {
+            def entry = entries[j]
+            def files = entry.affectedFiles
+            for (int k = 0; k < files.size(); k++) {
+                def file = files[k]
+                if (file.path.startsWith("${directory}/")) {
+                    hasChangesInDirectory = true
+                    break
+                }
+            }
+        }
+    }
+
+    return hasChangesInDirectory
 }
