@@ -103,10 +103,8 @@ podTemplate(
 
                         def vulnerabilityCounts = [:]
                         def totalLine = trivyOutput.readLines().find { it.startsWith("Total:") }
-                        echo "totalLine=>"+totalLine
                         if (totalLine) {
                             def countsPart = (totalLine =~ /\((.+)\)/)[0][1]
-                            echo "Counts part: "+ countsPart
                             countsPart.split(",").each { part ->
                                 def (severity, count) = part.trim().split(":")
                                 vulnerabilityCounts[severity] = count.trim().toInteger()
