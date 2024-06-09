@@ -55,6 +55,7 @@ podTemplate(
         sonarProjectKey = props["sonar_project_key"]
         sonarHostUrl = props["sonar_host_url"]
         sonarCredentialId = props["sonar_credential_id"]
+        sonarJavaBinaries = props["sonar_java_binaries"]
 
         try {
 
@@ -74,7 +75,7 @@ podTemplate(
                                 -Dsonar.projectKey=${sonarProjectKey} \
                                 -Dsonar.host.url=${sonarHostUrl} \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=${artifactoryBuildDir}/classes/java/main
+                                -Dsonar.java.binaries=${sonarJavaBinaries}
                         """
                     }
                 }
@@ -89,7 +90,7 @@ podTemplate(
                         )]) {
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/libs/${artifactoryFile} ${SRC_DIR}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
                             sh "sleep 2"
                             sh "podman push ${registry}/${organization}/${repository}:${tag}"
                             sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"

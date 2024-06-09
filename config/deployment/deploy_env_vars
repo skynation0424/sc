@@ -1,4 +1,4 @@
-#deploy.yaml 관련
+#-- 배포 manefest 관련
 application_name=config
 namespace=ondal
 replicas=1
@@ -13,9 +13,9 @@ resources_limits_memory=1024Mi
 service_type=ClusterIP
 ingress_host=config.165.192.76.211.nip.io
 
-#Jenkins pipeline관련
+#-- Jenkins pipeline관련
 image_reg_credential_id=credential_cna
-artifactory_build_dir=build
+artifactory_build_dir=build/libs
 artifactory_file=config.jar
 manifest=deploy.yaml
 registry=docker.io
@@ -25,4 +25,4 @@ image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-config
 sonar_host_url=http://sonarqube
 sonar_credential_id=sonar_accesstoken
-
+sonar_java_binaries=build/classes/java/main
