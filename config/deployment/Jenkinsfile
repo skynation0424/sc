@@ -1,4 +1,5 @@
-def PIPELINE_ID = "config-${env.BUILD_NUMBER}"
+def SRC_DIR = "config"
+def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 def GIT_URL = "https://github.com/cna-bootcamp/sc.git"
 def GIT_BRANCH = "dev"
 def NFS_HOST = "165.192.76.211"
@@ -38,8 +39,12 @@ podTemplate(
 {
 	node("${PIPELINE_ID}") {
 		stage("Get Source") {
-			git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
-        } 
+			//git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
+			checkout scm
+        }
+        when {
+            changeset "${SRC_DIR}/**"
+        }
 
         baseDir = "config/deployment"
 		//-- Read pipeline.properties and setting variables
