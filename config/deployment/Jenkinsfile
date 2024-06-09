@@ -114,6 +114,7 @@ podTemplate(
                         source ${baseDir}/deploy_env_vars
                         set +a
 
+                        export tag=${tag}
                         envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                         cat ${baseDir}/${manifest}
                     """
@@ -170,6 +171,6 @@ def getTimestamp() {
     def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
     def currentDate = new Date()
     def timestamp = dateFormat.format(currentDate)
-    echo "Timestamp: " + timestamp
+
     return timestamp
 }
