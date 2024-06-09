@@ -1,4 +1,4 @@
-def SRC_DIR = "config"
+def SRC_DIR = "scg"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 def NFS_HOST = "165.192.76.211"
 def NFS_DIR = "data"
@@ -152,8 +152,10 @@ def checkChangesInDirectory(String directory) {
         for (int j = 0; j < entries.length; j++) {
             def entry = entries[j]
             def files = entry.affectedFiles
+            echo "*** Affected files count: " + files.size()
             for (int k = 0; k < files.size(); k++) {
                 def file = files[k]
+                echo "*** Affected file: " + file.path
                 if (file.path.startsWith("${directory}/")) {
                     hasChangesInDirectory = true
                     break
