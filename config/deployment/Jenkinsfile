@@ -86,20 +86,28 @@ podTemplate(
             stage("Scan Image Vulnerability") {
                 timeout(time: 10, unit: 'MINUTES') {
                     container("trivy") {
-                        try {
-                            sh """
+                        def trivyOutput = sh (
+                            script: """
                                 trivy image \
                                     --cache-dir /${TRIVY_CACHE_DIR} \
                                     --scanners vuln \
                                     --severity ${imageScanSeverity} \
-                                    --exit-code 1 \
+                                    --format json \
                                     ${registry}/${organization}/${repository}:${tag}
-                            """
-                        } catch (e) {
-                            echo "Vulnerability scan failed. Aborting the pipeline."
+                            """,
+                            returnStdout: true
+                        )
+
+                        def trivyResult = readJSON text: trivyOutput
+                        def criticalVulnerabilities = trivyResult[0].Vulnerabilities.findAll { it.Severity == 'CRITICAL' }
+
+                        if (criticalVulnerabilities.size() > 0) {
+                            echo "Critical vulnerabilities found. Aborting the pipeline."
                             currentBuild.result = 'FAILURE'
                             notifySlack("Vulnerability scan failed.", "#FF0000")
-                            error "Vulnerability scan failed."    //중단시키기 위해 에러 발생
+                            error "Critical vulnerabilities found."
+                        } else {
+                            echo "No critical vulnerabilities found. Continuing the pipeline."
                         }
                     }
                 }

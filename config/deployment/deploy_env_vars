@@ -17,5 +17,4 @@ manifest=deploy.yaml
 registry=docker.io
 organization=hiondal
 repository=config
-#image_scan_severity=HIGH,CRITICAL
-image_scan_severity=CRITICAL
+image_scan_severity=CRITICAL,HIGH,MEDIUM
