@@ -1,4 +1,4 @@
-@Library('pipeline-shared-library')
+@Library('pipeline_shared_library')
 
 def SRC_DIR = "config"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
