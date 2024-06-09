@@ -48,6 +48,7 @@ podTemplate(
         baseDir = "${SRC_DIR}/deployment"
         def props = readProperties  file:"${baseDir}/deploy_env_vars"
 
+        applicationName=props["application_name"]
         artifactoryFile=props["artifactory_file"]
         registry=props["registry"]
         organization=props["organization"]
@@ -69,6 +70,17 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
+                    withSonarQubeEnv("${sonarqubeServerId}") {
+                        sh """
+                            gradle :${applicationName}:sonar \
+                                -Dsonar.projectName=sc-config \
+                                -Dsonar.projectKey=sc-config \
+                                -Dsonar.host.url=http://sonarqube \
+                                -Dsonar.token=${SONAR_TOKEN} \
+                                -Dsonar.java.binaries=build/classes/java/main
+                        """
+                    }
+                /*
                     withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
                         sh """
                             gradle :config:sonar \
@@ -79,6 +91,8 @@ podTemplate(
                                 -Dsonar.java.binaries=build/classes/java/main
                         """
                     }
+                */
+
                 }
             }
 
