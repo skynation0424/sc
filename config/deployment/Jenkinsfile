@@ -53,8 +53,7 @@ podTemplate(
         imageScanSeverity = props["image_scan_severity"]
         imageRegCredentialId = props["image_reg_credential_id"]
         sonarProjectKey = props["sonar_project_key"]
-        sonarHostUrl = props["sonar_host_url"]
-        sonarCredentialId = props["sonar_credential_id"]
+        sonarServerId = props["sonar_server_id"]
         sonarJavaBinaries = props["sonar_java_binaries"]
 
         try {
@@ -68,16 +67,14 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
-                    //withCredentials([string(credentialsId: "${sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
-                        withSonarQubeEnv("SonarQube") {
-                            sh """
-                                gradle :${applicationName}:sonar \
-                                    -Dsonar.projectName=${sonarProjectKey} \
-                                    -Dsonar.projectKey=${sonarProjectKey} \
-                                    -Dsonar.java.binaries=${sonarJavaBinaries}
-                            """
-                        }
-                    //}
+                    withSonarQubeEnv("${sonarServerId}") {
+                        sh """
+                            gradle :${applicationName}:sonar \
+                                -Dsonar.projectName=${sonarProjectKey} \
+                                -Dsonar.projectKey=${sonarProjectKey} \
+                                -Dsonar.java.binaries=${sonarJavaBinaries}
+                        """
+                    }
                 }
             }
             stage("SonarQube Quality Gate") {

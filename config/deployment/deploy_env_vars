@@ -23,6 +23,5 @@ organization=hiondal
 repository=config
 image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-config
-sonar_host_url=http://sonarqube
-sonar_credential_id=sonar_accesstoken
+sonar_server_id=SonarQube
 sonar_java_binaries=build/classes/java/main
