@@ -57,20 +57,21 @@ podTemplate(
         manifest=props["manifest"]
         imageScanSeverity = props["image_scan_severity"]
         sonarqubeServerId = props["sonarqube_server_id"]
-        echo "Sonar: " + sonarqubeServerId
+
         try {
-            stage("SonarQube Analysis") {
-                container("gradle") {
-                    withSonarQubeEnv("${sonarqubeServerId}") {
-                        sh "gradle sonarqube -Dsonar.projectKey=sc-config"
-                    }
-                }
-            }
 
             stage("Build Jar") {
                 container("gradle") {
                     sh 'echo "Build jar under target directory"'
                     sh "gradle :${SRC_DIR}:build -x test"
+                }
+            }
+
+            stage("SonarQube Analysis") {
+                container("gradle") {
+                    withSonarQubeEnv("${sonarqubeServerId}") {
+                        sh "gradle sonarqube -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${project.buildDir}/classes/java/main"
+                    }
                 }
             }
 
