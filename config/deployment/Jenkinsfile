@@ -101,16 +101,24 @@ podTemplate(
                         echo "Trivy scan results:"
                         echo trivyOutput
 
-                        def criticalVulnerabilities = trivyOutput.readLines().findAll { it.contains('CRITICAL') }
+                       def severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+                       def vulnerabilityCounts = [:]
 
-                        if (criticalVulnerabilities.size() > 0) {
-                            echo "Critical vulnerabilities found. Aborting the pipeline."
-                            currentBuild.result = 'FAILURE'
-                            notifySlack("Vulnerability scan failed.", "#FF0000")
-                            error "Critical vulnerabilities found:\n${criticalVulnerabilities.join('\n')}"
-                        } else {
-                            echo "No critical vulnerabilities found. Continuing the pipeline."
-                        }
+                       for (severity in severities) {
+                           def count = trivyOutput.readLines().count { it.contains("${severity}:") }
+                           vulnerabilityCounts[severity] = count
+                       }
+
+                       echo "Vulnerability counts: ${vulnerabilityCounts}"
+
+                       if (vulnerabilityCounts["CRITICAL"] > 0) {
+                           echo "Critical vulnerabilities found. Aborting the pipeline."
+                           currentBuild.result = 'FAILURE'
+                           notifySlack("Vulnerability scan failed.", "#FF0000")
+                           error "Critical vulnerabilities found."
+                       } else {
+                           echo "No critical vulnerabilities found. Continuing the pipeline."
+                       }
                     }
                 }
             }
