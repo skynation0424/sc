@@ -71,10 +71,11 @@ podTemplate(
                 container("gradle") {
                     withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
                         sh """
+                            ls -al ${env.WORKSPACE}/${SRC_DIR}/build/libs
                             gradle sonar -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=${SRC_DIR}/build/libs/${artifactoryFile}
+                                -Dsonar.java.binaries=${env.WORKSPACE}/${SRC_DIR}/build/libs/${artifactoryFile}
                         """
                     }
 
