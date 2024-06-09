@@ -52,7 +52,8 @@ podTemplate(
         registry=props["registry"]
         organization=props["organization"]
         repository=props["repository"]
-        tag=props["tag"]
+        //tag=props["tag"]
+        tag = getTimestamp()
         namespace=props["namespace"]
         manifest=props["manifest"]
         selector_key=props["selector_key"]
@@ -97,7 +98,7 @@ podTemplate(
                     }
                 }
             }
-
+/*
             try {
                 stage( "Clean Up Existing Deployments" ) {
                     container("kubectl") {
@@ -107,7 +108,7 @@ podTemplate(
             } catch(e) {
                 echo "No existed Deployments"
             }
-
+*/
             stage( "Generate deployment yaml" ) {
                 container("envsubst") {
                     sh """
@@ -165,4 +166,11 @@ def checkChangesInDirectory(String directory) {
     }
 
     return hasChangesInDirectory
+}
+
+def getTimestamp() {
+    def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+    def currentDate = new Date()
+    def timestamp = dateFormat.format(currentDate)
+    return timestamp
 }
