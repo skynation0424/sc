@@ -73,7 +73,7 @@ podTemplate(
                         sh """
                             gradle sonar -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
-                                -Dsonar.login=${SONAR_TOKEN}
+                                -Dsonar.token=${SONAR_TOKEN} \
                                 -Dsonar.java.binaries=${SRC_DIR}/build/libs/${artifactoryFile}
                         """
                     }
