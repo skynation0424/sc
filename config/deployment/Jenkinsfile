@@ -74,8 +74,7 @@ podTemplate(
                                 gradle :${applicationName}:sonar \
                                     -Dsonar.projectName=${sonarProjectKey} \
                                     -Dsonar.projectKey=${sonarProjectKey} \
-                                    //-Dsonar.host.url=${sonarHostUrl} \
-                                    //-Dsonar.token=${SONAR_TOKEN} \
+
                                     -Dsonar.java.binaries=${sonarJavaBinaries}
                             """
                         }
