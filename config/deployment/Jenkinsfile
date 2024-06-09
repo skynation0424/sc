@@ -85,28 +85,25 @@ podTemplate(
 
             stage("Scan Image Vulnerability") {
                 timeout(time: 10, unit: 'MINUTES') {
-                    container("trivy"){
-                        sh """
-                            trivy image \
-                                --cache-dir /${TRIVY_CACHE_DIR} \
-                                --scanners vuln \
-                                --severity HIGH,CRITICAL \
-                                ${registry}/${organization}/${repository}:${tag}
-                        """
+                    container("trivy") {
+                        try {
+                            sh """
+                                trivy image \
+                                    --cache-dir /${TRIVY_CACHE_DIR} \
+                                    --scanners vuln \
+                                    --severity HIGH,CRITICAL \
+                                    --exit-code 1 \
+                                    ${registry}/${organization}/${repository}:${tag}
+                            """
+                        } catch (e) {
+                            echo "Vulnerability scan failed. Aborting the pipeline."
+                            currentBuild.result = 'FAILURE'
+                            notifySlack("Vulnerability scan failed.", "#FF0000")
+                        }
                     }
                 }
             }
-/*
-            try {
-                stage( "Clean Up Existing Deployments" ) {
-                    container("kubectl") {
-                        sh "kubectl delete deploy -n ${namespace} --selector=${selector_key}=${selector_val}"
-                    }
-                }
-            } catch(e) {
-                echo "No existed Deployments"
-            }
-*/
+
             stage( "Generate deployment yaml" ) {
                 container("envsubst") {
                     sh """
