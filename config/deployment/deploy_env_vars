@@ -17,4 +17,3 @@ manifest=deploy.yaml
 registry=docker.io
 organization=hiondal
 repository=config
-tag=latest
