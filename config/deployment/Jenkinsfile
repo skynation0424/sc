@@ -70,20 +70,9 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
-                    withSonarQubeEnv("${sonarqubeServerId}") {
-                        sh """
-                            gradle :${applicationName}:sonar \
-                                -Dsonar.projectName=sc-config \
-                                -Dsonar.projectKey=sc-config \
-                                //-Dsonar.host.url=http://sonarqube \
-                                //-Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=build/classes/java/main
-                        """
-                    }
-                /*
                     withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
                         sh """
-                            gradle :config:sonar \
+                            gradle :${applicationName}:sonar \
                                 -Dsonar.projectName=sc-config \
                                 -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
@@ -91,8 +80,6 @@ podTemplate(
                                 -Dsonar.java.binaries=build/classes/java/main
                         """
                     }
-                */
-
                 }
             }
 
