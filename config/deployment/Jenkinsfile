@@ -80,6 +80,17 @@ podTemplate(
                     }
                 }
             }
+            stage("SonarQube Quality Gate") {
+                timeout(time: 10, unit: 'MINUTES') {
+                    def qg = waitForQualityGate()
+                    if (qg.status != 'OK') {
+                        echo "SonarQube Quality Gate failed. Aborting the pipeline."
+                        currentBuild.result = 'FAILURE'
+                        notifySlack("SonarQube Quality Gate failed.", "#FF0000")
+                        error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
+                    }
+                }
+            }
 
             stage("Build Container image") {
                 container("podman") {
