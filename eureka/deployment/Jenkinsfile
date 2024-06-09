@@ -152,8 +152,11 @@ def checkChangesInDirectory(String directory) {
         for (int j = 0; j < entries.length; j++) {
             def entry = entries[j]
             def files = entry.affectedFiles
+            echo "*** Affected files count: " + files.size()
+
             for (int k = 0; k < files.size(); k++) {
                 def file = files[k]
+                echo "*** Affected file: " + file.path
                 if (file.path.startsWith("${directory}/")) {
                     hasChangesInDirectory = true
                     break
