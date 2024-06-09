@@ -13,8 +13,8 @@ podTemplate(
         containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
     ],
     volumes: [
-        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}", readOnly: false ),
-        nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}", readOnly: false)
+        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}", readOnly: false ),
+        nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}", readOnly: false)
     ]
 )
 
@@ -56,6 +56,14 @@ podTemplate(
         sonarJavaBinaries = props["sonar_java_binaries"]
 
         try {
+            stage("Prepare cache volumes") {
+                container("kubectl") {
+                    sh """
+                        ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
+                        ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
+                    """
+                }
+            }
 
             stage("Build Jar") {
                 container("gradle") {
