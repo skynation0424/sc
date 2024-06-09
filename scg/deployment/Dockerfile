@@ -2,12 +2,12 @@ FROM openjdk:23-oraclelinux8
 
 ARG ARTIFACTORY_FILE
 ENV ARTIFACTORY_FILE ${ARTIFACTORY_FILE}
-ENV USERNAME docker  
+ENV USERNAME k8s
 ENV ARTIFACTORY_HOME /home/${USERNAME}
 
 # DON'T change USERNAME
 # Add a docker user, make work dir
-RUN adduser -S -G root -h ${ARTIFACTORY_HOME} -s /bin/bash ${USERNAME} && \
+RUN adduser -r -G root -h ${ARTIFACTORY_HOME} -s /bin/bash ${USERNAME} && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     chown ${USERNAME}:root ${ARTIFACTORY_HOME}
 
@@ -18,6 +18,6 @@ COPY ./build/libs/${ARTIFACTORY_FILE} ${ARTIFACTORY_HOME}
 
 # Launch the artifactory as docker user
 ENTRYPOINT [ "sh", "-c" ]
-USER docker
+USER ${USERNAME}
 #CMD [ "java --Dspring.profiles.active=${PROFILE} -jar ${ARTIFACTORY_FILE}" ]
 CMD [ "java -jar ${ARTIFACTORY_FILE}" ]
