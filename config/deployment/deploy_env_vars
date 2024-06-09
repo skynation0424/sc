@@ -1,6 +1,6 @@
 application_name=config
 namespace=ondal
-replicas=2
+replicas=3
 server_port=9001
 container_port=18080
 image_pull_secret=dockerhub
