@@ -101,17 +101,14 @@ podTemplate(
                         echo "Trivy scan results:"
                         echo trivyOutput
 
-                       def totalLine = trivyOutput.readLines().find { it.startsWith("Total:") }
-                       def vulnerabilityCounts = [:]
+                        def vulnerabilityCounts = [:]
+                        trivyOutput.readLines().find { it.startsWith("Total:") }?.trim()?.split()?.tail()?.each { counts ->
+                            counts.findAll(/(\w+): (\d+)/) { match, severity, count ->
+                                vulnerabilityCounts[severity] = count.toInteger()
+                            }
+                        }
 
-                       if (totalLine) {
-                           totalLine.split(",").each { part ->
-                               def (severity, count) = part.trim().split(":")
-                               vulnerabilityCounts[severity.trim()] = count.trim().toInteger()
-                           }
-                       }
-
-                       echo "Vulnerability counts: ${vulnerabilityCounts}"
+                        echo "Vulnerability counts: ${vulnerabilityCounts}"
 
                        if (vulnerabilityCounts["CRITICAL"] > 0) {
                            echo "Critical vulnerabilities found. Aborting the pipeline."
