@@ -20,7 +20,7 @@ spec:
         - name: ${image_pull_secret}
       containers:
         - name: ${application_name}
-          image: ${image_path}
+          image: ${registry}/${organization}/${repository}:${tag}
           imagePullPolicy: ${image_pull_policy}
           envFrom:
           - configMapRef:
@@ -47,8 +47,9 @@ metadata:
   namespace: ${namespace}
 data:
   SERVER_PORT: "${server_port}"
-  EUREKA_HOSTNAME: ${application_name}
-  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${application_name}:${container_port}/eureka/
+  GIT_URL: https://github.com:443/cna-bootcamp/subride-config.git
+  GIT_USERNAME: hiondal
+  GIT_BRANCH: main
 
 ---
 
@@ -59,6 +60,8 @@ metadata:
   namespace: ${namespace}
 type: Opaque
 stringData:
+  GIT_TOKEN: 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
+  ENCRYPT_KEY: CL4cboqlIweOqt93wjzZi/qjCxcSOYAMgzdKiy6cG2Y=
 
 ---
 

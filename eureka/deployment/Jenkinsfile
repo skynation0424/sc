@@ -1,29 +1,17 @@
 def SRC_DIR = "eureka"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
-def NFS_HOST = "165.192.76.211"
-def NFS_DIR = "data"
-def DOCKER_CREDENTIAL = "credential_cna"
-def TRIVY_CACHE_DIR = "trivy-cache"
-
-def IMAGE_TRIVY = "aquasec/trivy"
-def IMAGE_KUBECTL = "lachlanevenson/k8s-kubectl"
-def IMAGE_GRADLE = "gradle:jdk17"
-def IMAGE_PODMAN = "mgoltzsche/podman"
-def IMAGE_ENVSUBST = "hiondal/envsubst"
-
-notifySlack("STARTED", "#FFFF00")
 
 podTemplate(
     label: "${PIPELINE_ID}",
     containers: [
-        containerTemplate(name: "trivy", image: "${IMAGE_TRIVY}", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: "kubectl", image: "${IMAGE_KUBECTL}", command: "cat", ttyEnabled: true),
-        containerTemplate(name: "gradle", image: "${IMAGE_GRADLE}", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: 'podman', image: "${IMAGE_PODMAN}", ttyEnabled: true, command: 'cat', privileged: true),
-        containerTemplate(name: 'envsubst', image: "${IMAGE_ENVSUBST}", command: 'sleep', args: '1h')
+        containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+        containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+        containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
     ],
     volumes: [
-        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/gradle", readOnly: false ),
+        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}", readOnly: false ),
         nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}", readOnly: false)
     ]
 )
@@ -45,39 +33,71 @@ podTemplate(
         }
         //------------------------------
 
-        baseDir = "${SRC_DIR}/deployment"
-        def props = readProperties  file:"${baseDir}/pipeline.properties"
+        notifySlack("STARTED", "#FFFF00")
 
-        artifactoryFile=props["artifactory_file"]
-        registry=props["registry"]
-        organization=props["organization"]
-        repository=props["repository"]
-        tag=props["tag"]
-        namespace=props["namespace"]
-        manifest=props["manifest"]
-        selector_key=props["selector_key"]
-        selector_val=props["selector_val"]
+        baseDir = "${SRC_DIR}/deployment"
+        def props = readProperties  file:"${baseDir}/deploy_env_vars"
+
+        applicationName = props["application_name"]
+        artifactoryBuildDir = props["artifactory_build_dir"]
+        artifactoryFile = props["artifactory_file"]
+        registry = props["registry"]
+        organization = props["organization"]
+        repository = props["repository"]
+        tag = getTimestamp()
+        namespace = props["namespace"]
+        manifest = props["manifest"]
+        imageScanSeverity = props["image_scan_severity"]
+        imageRegCredentialId = props["image_reg_credential_id"]
+        sonarProjectKey = props["sonar_project_key"]
+        sonarServerId = props["sonar_server_id"]
+        sonarJavaBinaries = props["sonar_java_binaries"]
 
         try {
+
             stage("Build Jar") {
                 container("gradle") {
-                    sh 'echo "Build jar under target directory"'
+                    sh 'echo "Build jar under build directory"'
                     sh "gradle :${SRC_DIR}:build -x test"
+                }
+            }
+
+            stage("SonarQube Analysis") {
+                container("gradle") {
+                    withSonarQubeEnv("${sonarServerId}") {
+                        sh """
+                            gradle :${applicationName}:sonar \
+                                -Dsonar.projectName=${sonarProjectKey} \
+                                -Dsonar.projectKey=${sonarProjectKey} \
+                                -Dsonar.java.binaries=${sonarJavaBinaries}
+                        """
+                    }
+                }
+            }
+            stage("SonarQube Quality Gate") {
+                timeout(time: 10, unit: 'MINUTES') {
+                    def qg = waitForQualityGate()
+                    if (qg.status != 'OK') {
+                        echo "SonarQube Quality Gate failed. Aborting the pipeline."
+                        currentBuild.result = 'FAILURE'
+                        notifySlack("SonarQube Quality Gate failed.", "#FF0000")
+                        error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
+                    }
                 }
             }
 
             stage("Build Container image") {
                 container("podman") {
                     withCredentials([usernamePassword(
-                        credentialsId: "${DOCKER_CREDENTIAL}",
+                        credentialsId: "${imageRegCredentialId}",
                         usernameVariable: 'USER',
                         passwordVariable: 'PASSWORD'
                         )]) {
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${SRC_DIR}"
-                            sh "sleep 2"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
                             sh "podman push ${registry}/${organization}/${repository}:${tag}"
+
                             sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
                             sh "podman push ${registry}/${organization}/${repository}:latest"
                     }
@@ -86,26 +106,47 @@ podTemplate(
 
             stage("Scan Image Vulnerability") {
                 timeout(time: 10, unit: 'MINUTES') {
-                    container("trivy"){
-                        sh """
-                            trivy image \
-                                --cache-dir /${TRIVY_CACHE_DIR} \
-                                --scanners vuln \
-                                --severity HIGH,CRITICAL \
-                                ${registry}/${organization}/${repository}:${tag}
-                        """
-                    }
-                }
-            }
+                    container("trivy") {
+                        def trivyOutput = sh (
+                            script: """
+                                trivy image \
+                                    --cache-dir /${TRIVY_CACHE_DIR} \
+                                    --scanners vuln \
+                                    --severity ${imageScanSeverity} \
+                                    --exit-code 0 \
+                                    ${registry}/${organization}/${repository}:${tag}
+                            """,
+                            returnStdout: true
+                        ).trim()
 
-            try {
-                stage( "Clean Up Existing Deployments" ) {
-                    container("kubectl") {
-                        sh "kubectl delete deploy -n ${namespace} --selector=${selector_key}=${selector_val}"
+                        echo "Trivy scan results:"
+                        echo trivyOutput
+
+                        def vulnerabilityCounts = [:]
+                        def totalLine = trivyOutput.readLines().find { it.startsWith("Total:") }
+                        if (totalLine) {
+                            def countsPart = (totalLine =~ /\((.+)\)/)[0][1]
+                            countsPart.split(",").each { part ->
+                                def (severity, count) = part.trim().split(":")
+                                vulnerabilityCounts[severity] = count.trim().toInteger()
+                            }
+                        }
+
+                        echo "Vulnerability counts:"
+                        vulnerabilityCounts.each { severity, count ->
+                            echo "${severity}: ${count}"
+                        }
+
+                        if (vulnerabilityCounts["CRITICAL"] > 0) {
+                            echo "Critical vulnerabilities found. Aborting the pipeline."
+                            currentBuild.result = 'FAILURE'
+                            notifySlack("Vulnerability scan failed.", "#FF0000")
+                            error "Critical vulnerabilities found."
+                        } else {
+                            echo "No critical vulnerabilities found. Continuing the pipeline."
+                        }
                     }
                 }
-            } catch(e) {
-                echo "No existed Deployments"
             }
 
             stage( "Generate deployment yaml" ) {
@@ -115,6 +156,7 @@ podTemplate(
                         source ${baseDir}/deploy_env_vars
                         set +a
 
+                        export tag=${tag}
                         envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                         cat ${baseDir}/${manifest}
                     """
@@ -124,7 +166,6 @@ podTemplate(
             stage( "Deploy to Cluster" ) {
                 container("kubectl") {
                     sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
-                    sh "sleep 5"
                 }
             }
 
@@ -153,7 +194,6 @@ def checkChangesInDirectory(String directory) {
             def entry = entries[j]
             def files = entry.affectedFiles
             echo "*** Affected files count: " + files.size()
-
             for (int k = 0; k < files.size(); k++) {
                 def file = files[k]
                 echo "*** Affected file: " + file.path
@@ -166,4 +206,12 @@ def checkChangesInDirectory(String directory) {
     }
 
     return hasChangesInDirectory
+}
+
+def getTimestamp() {
+    def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
+    def currentDate = new Date()
+    def timestamp = dateFormat.format(currentDate)
+
+    return timestamp
 }

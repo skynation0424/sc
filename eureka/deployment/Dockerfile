@@ -15,7 +15,7 @@ RUN adduser -r -G root -d ${ARTIFACTORY_HOME} -s /bin/bash ${USERNAME} && \
 WORKDIR ${ARTIFACTORY_HOME}
 
 # Copy your jar to the container
-COPY ./build/libs/${ARTIFACTORY_FILE} ${ARTIFACTORY_HOME}
+COPY ${ARTIFACTORY_FILE} ${ARTIFACTORY_HOME}
 
 # Launch the artifactory as docker user
 ENTRYPOINT [ "sh", "-c" ]
