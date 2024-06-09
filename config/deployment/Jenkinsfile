@@ -43,11 +43,33 @@ podTemplate(
 			checkout scm
         }
 
-        //when {
-        //    changeset "${SRC_DIR}/**"
-        //}
+        script {
+                    def changeLogSets = currentBuild.changeSets
+                    def hasChangesInConfig = false
 
-        baseDir = "config/deployment"
+                    for (int i = 0; i < changeLogSets.size(); i++) {
+                        def entries = changeLogSets[i].items
+                        for (int j = 0; j < entries.length; j++) {
+                            def entry = entries[j]
+                            def files = entry.affectedFiles
+                            for (int k = 0; k < files.size(); k++) {
+                                def file = files[k]
+                                if (file.path.startsWith('config/')) {
+                                    hasChangesInConfig = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if (!hasChangesInConfig) {
+                        echo "No changes in 'config' directory. Skipping pipeline."
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+                }
+
+        baseDir = "${SRC_DIR}/deployment"
 		//-- Read pipeline.properties and setting variables
 		def props = readProperties  file:"${baseDir}/pipeline.properties"
 
@@ -56,7 +78,6 @@ podTemplate(
 		organization=props["organization"]
 		repository=props["repository"]
 		tag=props["tag"]
-		srcDir=props["src_dir"]
 		namespace=props["namespace"]
 		manifest=props["manifest"]
 		selector_key=props["selector_key"]
@@ -66,7 +87,7 @@ podTemplate(
 			stage("Build Jar") {
 				container("gradle") {
 					sh 'echo "Build jar under target directory"'
-					sh "gradle :${srcDir}:build -x test"
+					sh "gradle :${SRC_DIR}:build -x test"
 				}
 			}
 
@@ -79,7 +100,7 @@ podTemplate(
 						)]) {
 						    sh 'echo user "$USER" pasword "$PASSWORD"'
 						    sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-							sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${srcDir}"
+							sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${SRC_DIR}"
 							sh "sleep 2"
 							sh "podman push ${registry}/${organization}/${repository}:${tag}"
 							sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
