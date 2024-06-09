@@ -42,9 +42,10 @@ podTemplate(
 			//git branch: "${GIT_BRANCH}", url: "${GIT_URL}"
 			checkout scm
         }
-        when {
-            changeset "${SRC_DIR}/**"
-        }
+
+        //when {
+        //    changeset "${SRC_DIR}/**"
+        //}
 
         baseDir = "config/deployment"
 		//-- Read pipeline.properties and setting variables
