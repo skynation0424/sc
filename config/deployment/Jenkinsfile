@@ -67,7 +67,7 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
-                    withCredentials([string(credentialsId: "%{sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: "${sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
                         sh """
                             gradle :${applicationName}:sonar \
                                 -Dsonar.projectName=${sonarProjectKey} \
