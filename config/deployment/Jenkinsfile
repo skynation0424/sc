@@ -1,3 +1,5 @@
+@Library('pipeline-shared-library')
+
 def SRC_DIR = "config"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 
@@ -23,17 +25,17 @@ podTemplate(
         }
 
         //---- 소스 변경 여부 검사
-        def hasChangesInConfig = checkChangesInDirectory("${SRC_DIR}")
+        def hasChangesInConfig = commonFunctions.checkChangesInDirectory("${SRC_DIR}")
 
         if (!hasChangesInConfig) {
             echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
             currentBuild.result = 'SUCCESS'
-            notifySlack("SKIPPED", "#00FF00")
+            commonFunctions.notifySlack("SKIPPED", "#00FF00")
             return
         }
         //------------------------------
 
-        notifySlack("STARTED", "#FFFF00")
+        commonFunctions.notifySlack("STARTED", "#FFFF00")
 
         baseDir = "${SRC_DIR}/deployment"
         def props = readProperties  file:"${baseDir}/deploy_env_vars"
@@ -44,7 +46,7 @@ podTemplate(
         registry = props["registry"]
         organization = props["organization"]
         repository = props["repository"]
-        tag = getTimestamp()
+        tag = commonFunctions.getTimestamp()
         namespace = props["namespace"]
         manifest = props["manifest"]
         imageScanSeverity = props["image_scan_severity"]
@@ -80,7 +82,7 @@ podTemplate(
                     if (qg.status != 'OK') {
                         echo "SonarQube Quality Gate failed. Aborting the pipeline."
                         currentBuild.result = 'FAILURE'
-                        notifySlack("SonarQube Quality Gate failed.", "#FF0000")
+                        commonFunctions.notifySlack("SonarQube Quality Gate failed.", "#FF0000")
                         error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
                     }
                 }
@@ -140,7 +142,7 @@ podTemplate(
                         if (vulnerabilityCounts["CRITICAL"] > 0) {
                             echo "Critical vulnerabilities found. Aborting the pipeline."
                             currentBuild.result = 'FAILURE'
-                            notifySlack("Vulnerability scan failed.", "#FF0000")
+                            commonFunctions.notifySlack("Vulnerability scan failed.", "#FF0000")
                             error "Critical vulnerabilities found."
                         } else {
                             echo "No critical vulnerabilities found. Continuing the pipeline."
@@ -169,49 +171,12 @@ podTemplate(
                 }
             }
 
-            notifySlack("${currentBuild.currentResult}", "#00FF00")
+            commonFunctions.notifySlack("${currentBuild.currentResult}", "#00FF00")
             echo "**** FINISH ALL STAGES : SUCCESS"
 
         } catch(e) {
             currentBuild.result = "FAILED"
-            notifySlack("${currentBuild.currentResult}", "#FF0000")
+            commonFunctions.notifySlack("${currentBuild.currentResult}", "#FF0000")
         }
     }
-}
-
-/* -------- functions ---------- */
-def notifySlack(STATUS, COLOR) {
-    //slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
-}
-
-def checkChangesInDirectory(String directory) {
-    def changeLogSets = currentBuild.changeSets
-    def hasChangesInDirectory = false
-
-    for (int i = 0; i < changeLogSets.size(); i++) {
-        def entries = changeLogSets[i].items
-        for (int j = 0; j < entries.length; j++) {
-            def entry = entries[j]
-            def files = entry.affectedFiles
-            echo "*** Affected files count: " + files.size()
-            for (int k = 0; k < files.size(); k++) {
-                def file = files[k]
-                echo "*** Affected file: " + file.path
-                if (file.path.startsWith("${directory}/")) {
-                    hasChangesInDirectory = true
-                    break
-                }
-            }
-        }
-    }
-
-    return hasChangesInDirectory
-}
-
-def getTimestamp() {
-    def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
-    def currentDate = new Date()
-    def timestamp = dateFormat.format(currentDate)
-
-    return timestamp
 }
