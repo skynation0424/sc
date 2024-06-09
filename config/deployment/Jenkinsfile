@@ -52,10 +52,10 @@ podTemplate(
         registry=props["registry"]
         organization=props["organization"]
         repository=props["repository"]
-        //tag=props["tag"]
         tag = getTimestamp()
         namespace=props["namespace"]
         manifest=props["manifest"]
+        imageScanSeverity = props["image_scan_severity"]
 
         try {
             stage("Build Jar") {
@@ -91,7 +91,7 @@ podTemplate(
                                 trivy image \
                                     --cache-dir /${TRIVY_CACHE_DIR} \
                                     --scanners vuln \
-                                    --severity HIGH,CRITICAL \
+                                    --severity ${imageScanSeverity} \
                                     --exit-code 1 \
                                     ${registry}/${organization}/${repository}:${tag}
                             """
@@ -99,7 +99,7 @@ podTemplate(
                             echo "Vulnerability scan failed. Aborting the pipeline."
                             currentBuild.result = 'FAILURE'
                             notifySlack("Vulnerability scan failed.", "#FF0000")
-                            error "Aborted pipeline"
+                            error "Vulnerability scan failed."    //중단시키기 위해 에러 발생
                         }
                     }
                 }
