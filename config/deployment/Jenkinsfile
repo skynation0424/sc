@@ -92,20 +92,22 @@ podTemplate(
                                     --cache-dir /${TRIVY_CACHE_DIR} \
                                     --scanners vuln \
                                     --severity ${imageScanSeverity} \
-                                    --format json \
+                                    --exit-code 0 \
                                     ${registry}/${organization}/${repository}:${tag}
                             """,
                             returnStdout: true
-                        )
+                        ).trim()
 
-                        def trivyResult = readJSON text: trivyOutput
-                         def criticalVulnerabilities = trivyOutput.readLines().findAll { it.contains('CRITICAL') }
+                        echo "Trivy scan results:"
+                        echo trivyOutput
+
+                        def criticalVulnerabilities = trivyOutput.readLines().findAll { it.contains('CRITICAL') }
 
                         if (criticalVulnerabilities.size() > 0) {
                             echo "Critical vulnerabilities found. Aborting the pipeline."
                             currentBuild.result = 'FAILURE'
                             notifySlack("Vulnerability scan failed.", "#FF0000")
-                            error "Critical vulnerabilities found."
+                            error "Critical vulnerabilities found:\n${criticalVulnerabilities.join('\n')}"
                         } else {
                             echo "No critical vulnerabilities found. Continuing the pipeline."
                         }
