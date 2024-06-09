@@ -170,5 +170,6 @@ def getTimestamp() {
     def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
     def currentDate = new Date()
     def timestamp = dateFormat.format(currentDate)
+    echo "Timestamp: " + timestamp
     return timestamp
 }
