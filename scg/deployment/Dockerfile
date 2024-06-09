@@ -1,4 +1,4 @@
-FROM openjdk:17-alpine
+FROM openjdk:23-oraclelinux8
 
 ARG ARTIFACTORY_FILE
 ENV ARTIFACTORY_FILE ${ARTIFACTORY_FILE}
