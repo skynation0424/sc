@@ -74,17 +74,9 @@ podTemplate(
                             gradle sonar -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=./${SRC_DIR}/build/classes/java/main
+                                -Dsonar.java.binaries=./${SRC_DIR}/build/classes/java/main/com/sc/config
                         """
                     }
-
-                    /*
-                    withSonarQubeEnv("${sonarqubeServerId}") {
-                        sh "*** Jar Path: ${env.WORKSPACE}/${SRC_DIR}/build/libs/${artifactoryFile}"
-                        sh "ls -al ${env.WORKSPACE}/${SRC_DIR}/build/libs"
-                        sh "gradle sonar -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${env.WORKSPACE}/${SRC_DIR}/build/libs/${artifactoryFile}"
-                    }
-                    */
                 }
             }
 
