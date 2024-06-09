@@ -9,6 +9,7 @@ ENV ARTIFACTORY_HOME /home/${USERNAME}
 # Add a docker user, make work dir
 RUN adduser -r -G root -d ${ARTIFACTORY_HOME} -s /bin/bash ${USERNAME} && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir -p ${ARTIFACTORY_HOME} && \
     chown ${USERNAME}:root ${ARTIFACTORY_HOME}
 
 WORKDIR ${ARTIFACTORY_HOME}
