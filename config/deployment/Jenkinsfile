@@ -68,18 +68,16 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
-                    withCredentials([string(credentialsId: "${sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
+                    //withCredentials([string(credentialsId: "${sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
                         withSonarQubeEnv("SonarQube") {
                             sh """
                                 gradle :${applicationName}:sonar \
                                     -Dsonar.projectName=${sonarProjectKey} \
                                     -Dsonar.projectKey=${sonarProjectKey} \
-                                    -Dsonar.host.url=${sonarHostUrl} \
-                                    -Dsonar.token=${SONAR_TOKEN} \
                                     -Dsonar.java.binaries=${sonarJavaBinaries}
                             """
                         }
-                    }
+                    //}
                 }
             }
             stage("SonarQube Quality Gate") {
