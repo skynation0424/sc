@@ -99,6 +99,7 @@ podTemplate(
                         )
 
                         def trivyResult = readJSON text: trivyOutput
+                        echo trivyResult
                         def criticalVulnerabilities = trivyResult[0].Vulnerabilities.findAll { it.Severity == 'CRITICAL' }
 
                         if (criticalVulnerabilities.size() > 0) {
