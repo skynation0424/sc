@@ -72,7 +72,7 @@ podTemplate(
                     withSonarQubeEnv("${sonarqubeServerId}") {
                         //sh "gradle sonar"
                         //sh "gradle sonarqube -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${project.buildDir}/classes/java/main"
-                        sh "gradle sonarqube -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${SRC_DIR}/build/classes/java/main"
+                        sh "gradle sonar -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${SRC_DIR}/build/libs/${SRC_DIR}.jar"
                     }
                 }
             }
