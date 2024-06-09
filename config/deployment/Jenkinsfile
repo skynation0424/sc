@@ -56,8 +56,17 @@ podTemplate(
         namespace=props["namespace"]
         manifest=props["manifest"]
         imageScanSeverity = props["image_scan_severity"]
+        sonarqubeServerId = propm["sonarqube_server_id"]
 
         try {
+            stage("SonarQube Analysis") {
+                container("gradle") {
+                    withSonarQubeEnv("${sonarqubeServerId}") {
+                        sh "gradle sonarqube -Dsonar.projectKey=sc-config"
+                    }
+                }
+            }
+
             stage("Build Jar") {
                 container("gradle") {
                     sh 'echo "Build jar under target directory"'
