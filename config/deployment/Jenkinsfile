@@ -57,7 +57,7 @@ podTemplate(
         manifest=props["manifest"]
         imageScanSeverity = props["image_scan_severity"]
         sonarqubeServerId = propm["sonarqube_server_id"]
-
+        echo "Sonar: " + sonarqubeServerId
         try {
             stage("SonarQube Analysis") {
                 container("gradle") {
