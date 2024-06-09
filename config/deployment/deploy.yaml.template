@@ -20,7 +20,7 @@ spec:
         - name: ${image_pull_secret}
       containers:
         - name: ${application_name}
-          image: ${image_path}
+          image: ${registry}/${organization}/${repository}:${tag}
           imagePullPolicy: ${image_pull_policy}
           envFrom:
           - configMapRef:

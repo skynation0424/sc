@@ -46,7 +46,7 @@ podTemplate(
         //------------------------------
 
         baseDir = "${SRC_DIR}/deployment"
-        def props = readProperties  file:"${baseDir}/pipeline.properties"
+        def props = readProperties  file:"${baseDir}/deploy_env_vars"
 
         artifactoryFile=props["artifactory_file"]
         registry=props["registry"]
