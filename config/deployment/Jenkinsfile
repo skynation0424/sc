@@ -110,7 +110,10 @@ podTemplate(
                             }
                         }
 
-                        echo "Vulnerability counts: ${vulnerabilityCounts}"
+                        echo "Vulnerability counts:"
+                        vulnerabilityCounts.each { severity, count ->
+                            echo "${severity}: ${count}"
+                        }
 
                         if (vulnerabilityCounts["CRITICAL"] > 0) {
                             echo "Critical vulnerabilities found. Aborting the pipeline."
