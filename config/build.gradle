@@ -10,5 +10,6 @@ sonar {
         property "sonar.projectKey", "sc-config"
         property "sonar.projectName", "sc-config"
         property "sonar.login", "sqa_e5c66374865c038034ba3ab68abd97e38258b76c"
+        property "sonar.java.binaries", "build/classes/java/main"
     }
 }
