@@ -34,16 +34,16 @@ podTemplate(
             checkout scm
         }
 
-        script {
-            def hasChangesInConfig = checkChangesInDirectory("${SRC_DIR}")
+        //---- 소스 변경 여부 검사
+        def hasChangesInConfig = checkChangesInDirectory("${SRC_DIR}")
 
-            if (!hasChangesInConfig) {
-                echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
-                currentBuild.result = 'SUCCESS'
-                notifySlack("SKIPPED", "#00FF00")
-                return
-            }
+        if (!hasChangesInConfig) {
+            echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
+            currentBuild.result = 'SUCCESS'
+            notifySlack("SKIPPED", "#00FF00")
+            return
         }
+        //------------------------------
 
         baseDir = "${SRC_DIR}/deployment"
         def props = readProperties  file:"${baseDir}/pipeline.properties"
