@@ -76,7 +76,7 @@ podTemplate(
                                 -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=./${SRC_DIR}/build/classes/java/main/com/sc/config
+                                -Dsonar.java.binaries=build/classes/java/main
                         """
                     }
                 }
