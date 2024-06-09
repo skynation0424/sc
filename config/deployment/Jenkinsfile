@@ -2,25 +2,16 @@ def SRC_DIR = "config"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 def NFS_HOST = "165.192.76.211"
 def NFS_DIR = "data"
-def DOCKER_CREDENTIAL = "credential_cna"
 def TRIVY_CACHE_DIR = "trivy-cache"
-
-def IMAGE_TRIVY = "aquasec/trivy"
-def IMAGE_KUBECTL = "lachlanevenson/k8s-kubectl"
-def IMAGE_GRADLE = "gradle:jdk17"
-def IMAGE_PODMAN = "mgoltzsche/podman"
-def IMAGE_ENVSUBST = "hiondal/envsubst"
-
-notifySlack("STARTED", "#FFFF00")
 
 podTemplate(
     label: "${PIPELINE_ID}",
     containers: [
-        containerTemplate(name: "trivy", image: "${IMAGE_TRIVY}", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: "kubectl", image: "${IMAGE_KUBECTL}", command: "cat", ttyEnabled: true),
-        containerTemplate(name: "gradle", image: "${IMAGE_GRADLE}", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: 'podman', image: "${IMAGE_PODMAN}", ttyEnabled: true, command: 'cat', privileged: true),
-        containerTemplate(name: 'envsubst', image: "${IMAGE_ENVSUBST}", command: 'sleep', args: '1h')
+        containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+        containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+        containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+        containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
     ],
     volumes: [
         nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/gradle", readOnly: false ),
@@ -45,19 +36,25 @@ podTemplate(
         }
         //------------------------------
 
+        notifySlack("STARTED", "#FFFF00")
+
         baseDir = "${SRC_DIR}/deployment"
         def props = readProperties  file:"${baseDir}/deploy_env_vars"
 
-        applicationName=props["application_name"]
-        artifactoryFile=props["artifactory_file"]
-        registry=props["registry"]
-        organization=props["organization"]
-        repository=props["repository"]
+        applicationName = props["application_name"]
+        artifactoryBuildDir = props["artifactory_build_dir"]
+        artifactoryFile = props["artifactory_file"]
+        registry = props["registry"]
+        organization = props["organization"]
+        repository = props["repository"]
         tag = getTimestamp()
-        namespace=props["namespace"]
-        manifest=props["manifest"]
+        namespace = props["namespace"]
+        manifest = props["manifest"]
         imageScanSeverity = props["image_scan_severity"]
-        sonarqubeServerId = props["sonarqube_server_id"]
+        imageRegCredentialId = props["image_reg_credential_id"]
+        sonarProjectKey = props["sonar_project_key"]
+        sonarHostUrl = props["sonar_host_url"]
+        sonarCredentialId = props["sonar_credential_id"]
 
         try {
 
@@ -70,14 +67,14 @@ podTemplate(
 
             stage("SonarQube Analysis") {
                 container("gradle") {
-                    withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: "%{sonarCredentialId}", variable: 'SONAR_TOKEN')]) {
                         sh """
                             gradle :${applicationName}:sonar \
-                                -Dsonar.projectName=sc-config \
-                                -Dsonar.projectKey=sc-config \
-                                -Dsonar.host.url=http://sonarqube \
+                                -Dsonar.projectName=${sonarProjectKey} \
+                                -Dsonar.projectKey=${sonarProjectKey} \
+                                -Dsonar.host.url=${sonarHostUrl} \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                -Dsonar.java.binaries=build/classes/java/main
+                                -Dsonar.java.binaries=${artifactoryBuildDir}/classes/java/main
                         """
                     }
                 }
@@ -86,13 +83,13 @@ podTemplate(
             stage("Build Container image") {
                 container("podman") {
                     withCredentials([usernamePassword(
-                        credentialsId: "${DOCKER_CREDENTIAL}",
+                        credentialsId: "${imageRegCredentialId}",
                         usernameVariable: 'USER',
                         passwordVariable: 'PASSWORD'
                         )]) {
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryFile} ${SRC_DIR}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/libs/${artifactoryFile} ${SRC_DIR}"
                             sh "sleep 2"
                             sh "podman push ${registry}/${organization}/${repository}:${tag}"
                             sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
