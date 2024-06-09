@@ -71,10 +71,12 @@ podTemplate(
                 container("gradle") {
                     withCredentials([string(credentialsId: "sonar_accesstoken", variable: 'SONAR_TOKEN')]) {
                         sh """
-                            gradle sonar -Dsonar.projectKey=sc-config \
+                            gradle :config:sonar \
+                                -Dsonar.projectName=sc-config \
+                                -Dsonar.projectKey=sc-config \
                                 -Dsonar.host.url=http://sonarqube \
                                 -Dsonar.token=${SONAR_TOKEN} \
-                                //-Dsonar.java.binaries=./${SRC_DIR}/build/classes/java/main/com/sc/config
+                                -Dsonar.java.binaries=./${SRC_DIR}/build/classes/java/main/com/sc/config
                         """
                     }
                 }
