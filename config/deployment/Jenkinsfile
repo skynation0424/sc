@@ -3,32 +3,42 @@
 def SRC_DIR = "config"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 
-podTemplate(
-    label: "${PIPELINE_ID}",
-    containers: [
-        containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-        containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-        containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-    ],
-    volumes: [
-        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}", readOnly: false ),
-        nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}", readOnly: false)
-    ]
-)
-
-{
-    node("${PIPELINE_ID}") {
-        stage("Prepare cache volumes") {
-            container("kubectl") {
-                sh """
-                    ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
-                    ssh root@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
-                """
+stage("Prepare Environment") {
+    podTemplate(
+        label: "${PIPELINE_ID}",
+        containers: [
+            containerTemplate(name: 'ssh', image: 'kroniak/ssh-client', command: 'cat', ttyEnabled: true),
+            containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+            containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+            containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+            containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+            containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+        ],
+        volumes: [
+            nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}", readOnly: false ),
+            nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}", readOnly: false)
+        ]
+    )
+    {
+        node("${PIPELINE_ID}") {
+            stage("Prepare Cache Volumes") {
+                container("ssh") {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'jenkins-nfs-ssh', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                        sh """
+                            mkdir -p ~/.ssh
+                            ssh-keyscan -H ${NFS_HOST} >> ~/.ssh/known_hosts
+                            ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
+                            ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
+                        """
+                    }
+                }
             }
         }
+    }
+}
 
+stage("Build and Deploy") {
+    node("${PIPELINE_ID}") {
         stage("Get Source") {
             checkout scm
         }
@@ -84,6 +94,7 @@ podTemplate(
                     }
                 }
             }
+
             stage("SonarQube Quality Gate") {
                 timeout(time: 10, unit: 'MINUTES') {
                     def qg = waitForQualityGate()
@@ -102,14 +113,14 @@ podTemplate(
                         credentialsId: "${imageRegCredentialId}",
                         usernameVariable: 'USER',
                         passwordVariable: 'PASSWORD'
-                        )]) {
-                            sh 'echo user "$USER" pasword "$PASSWORD"'
-                            sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
-                            sh "podman push ${registry}/${organization}/${repository}:${tag}"
+                    )]) {
+                        sh 'echo user "$USER" pasword "$PASSWORD"'
+                        sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
+                        sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
+                        sh "podman push ${registry}/${organization}/${repository}:${tag}"
 
-                            sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
-                            sh "podman push ${registry}/${organization}/${repository}:latest"
+                        sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
+                        sh "podman push ${registry}/${organization}/${repository}:latest"
                     }
                 }
             }
