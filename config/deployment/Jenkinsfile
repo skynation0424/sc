@@ -67,18 +67,6 @@ podTemplate(
                 }
             }
 
-            stage("SonarQube Analysis") {
-                container("gradle") {
-                    echo "build dir: ${project.buildDir}"
-                    /*
-                    withSonarQubeEnv("${sonarqubeServerId}") {
-                        sh "./gradlew sonar"
-                        //sh "gradle sonarqube -Dsonar.projectKey=sc-config -Dsonar.java.binaries=${project.buildDir}/classes/java/main"
-                        //sh "gradle sonarqube -Dsonar.projectKey=sc-config -Dsonar.java.binaries=build/classes/java/main"
-                    }
-                    */
-                }
-            }
 
             stage("Build Container image") {
                 container("podman") {
