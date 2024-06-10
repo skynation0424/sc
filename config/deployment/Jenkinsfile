@@ -75,6 +75,8 @@ stage("Build and Deploy") {
             sonarProjectKey = props["sonar_project_key"]
             sonarServerId = props["sonar_server_id"]
 
+            def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
+
             try {
                 stage("Build Jar") {
                     container("gradle") {
@@ -115,7 +117,6 @@ stage("Build and Deploy") {
                             usernameVariable: 'USER',
                             passwordVariable: 'PASSWORD'
                         )]) {
-                            def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${IMAGE_REG_HOST} --username ${USER} --password ${PASSWORD}"
                             sh "podman build -f ${baseDir}/Dockerfile -t ${imagePath}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
@@ -137,7 +138,7 @@ stage("Build and Deploy") {
                                         --scanners vuln \
                                         --severity ${imageScanSeverity} \
                                         --exit-code 0 \
-                                        ${registry}/${organization}/${repository}:${tag}
+                                        ${imagePath}:${tag}
                                 """,
                                 returnStdout: true
                             ).trim()
