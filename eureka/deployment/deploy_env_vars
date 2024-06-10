@@ -1,7 +1,7 @@
 #-- 배포 manefest 관련
 application_name=eureka
 namespace=ondal
-replicas=1
+replicas=2
 server_port=8761
 container_port=18080
 resources_requests_cpu=500m
