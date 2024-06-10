@@ -22,6 +22,15 @@ spec:
         - name: ${application_name}
           image: ${image_path}
           imagePullPolicy: ${image_pull_policy}
+          env:
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           envFrom:
           - configMapRef:
               name: ${application_name}
@@ -70,6 +79,22 @@ metadata:
   namespace: ${namespace}
 spec:
   type: ${service_type}
+  selector:
+    app: ${application_name}
+  ports:
+    - name: ${application_name}
+      port: ${container_port}
+      targetPort: ${server_port}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${application_name}-headless
+  namespace: ${namespace}
+spec:
+  type: ClusterIP
+  clusterIP: None
   selector:
     app: ${application_name}
   ports:
