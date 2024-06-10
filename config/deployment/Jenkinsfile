@@ -170,6 +170,7 @@ stage("Build and Deploy") {
                             export tag=${tag}
                             export image_pull_secret=${IMAGE_REG_PULL_SECRET}
                             export image_pull_policy=${IMAGE_PULL_POLICY}
+                            export image_path=${imagePath}:${tag}
 
                             envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                             cat ${baseDir}/${manifest}
