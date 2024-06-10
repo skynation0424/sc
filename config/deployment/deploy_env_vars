@@ -14,7 +14,6 @@ ingress_host=config.165.192.76.211.nip.io
 #-- Jenkins pipeline관련
 artifactory_file=config.jar
 manifest=deploy.yaml
-repository=config
 image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-config
 sonar_server_id=SonarQube

@@ -69,7 +69,6 @@ stage("Build and Deploy") {
 
             applicationName = props["application_name"]
             artifactoryFile = props["artifactory_file"]
-            repository = props["repository"]
             tag = commonFunctions.getTimestamp()
             namespace = props["namespace"]
             manifest = props["manifest"]
@@ -117,13 +116,14 @@ stage("Build and Deploy") {
                             usernameVariable: 'USER',
                             passwordVariable: 'PASSWORD'
                         )]) {
+                            def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
-                            sh "podman push ${registry}/${organization}/${repository}:${tag}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${imagePath}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
+                            sh "podman push ${imagePath}:${tag}"
 
-                            sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
-                            sh "podman push ${registry}/${organization}/${repository}:latest"
+                            sh "podman tag ${imagePath}:${tag} ${imagePath}:latest"
+                            sh "podman push ${imagePath}:latest"
                         }
                     }
                 }
