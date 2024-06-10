@@ -17,3 +17,4 @@ artifactory_file=scg.jar
 manifest=deploy.yaml
 image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-scg
+
