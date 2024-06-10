@@ -29,6 +29,7 @@ spring.cloud.gateway:
           - GET
       '[/api/**]':
         allowedOrigins:
+          - http://localhost:3000
           - ${ALLOWED_ORIGINS:"http://localhost:3000"}
         allowedMethods:
           - GET
