@@ -47,8 +47,9 @@ metadata:
   namespace: ${namespace}
 data:
   SERVER_PORT: "${server_port}"
-  EUREKA_SERVERS: http://eureka:18080/eureka/
-  ALLOWED_ORIGINS: http://localhost:3000
+  EUREKA_SERVERS: ${eureka_server_fqdn}/eureka/
+  ALLOWED_ORIGINS: ${allowedOrigins}
+
 ---
 
 kind: Secret

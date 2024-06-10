@@ -2,7 +2,7 @@
 application_name=eureka
 namespace=ondal
 replicas=1
-server_port=3761
+server_port=8761
 container_port=18080
 resources_requests_cpu=500m
 resources_requests_memory=512Mi

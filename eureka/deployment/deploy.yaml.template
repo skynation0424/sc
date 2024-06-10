@@ -48,7 +48,7 @@ metadata:
 data:
   SERVER_PORT: "${server_port}"
   EUREKA_HOSTNAME: http://${application_name}:${container_port}
-  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${application_name}:${container_port}
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${application_name}:${container_port}/eureka/
 
 ---
 

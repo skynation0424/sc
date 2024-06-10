@@ -1,14 +1,19 @@
-namespace=ondal
+#-- 배포 manefest 관련
 application_name=scg
+namespace=ondal
 replicas=1
 server_port=19080
 container_port=18080
-image_pull_secret=dockerhub
-image_pull_policy=Always
-image_path=docker.io/hiondal/scg:latest
 resources_requests_cpu=500m
 resources_requests_memory=512Mi
 resources_limits_cpu=500m
 resources_limits_memory=1024Mi
 service_type=ClusterIP
 ingress_host=scg.165.192.76.211.nip.io
+allowedOrigins=http://localhost:3000
+
+#-- Jenkins pipeline관련
+artifactory_file=scg.jar
+manifest=deploy.yaml
+image_scan_severity=CRITICAL,HIGH,MEDIUM
+sonar_project_key=sc-scg
