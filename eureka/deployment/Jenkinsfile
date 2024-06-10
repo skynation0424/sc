@@ -75,6 +75,7 @@ stage("Build and Deploy") {
             sonarProjectKey = props["sonar_project_key"]
 
             def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
+            def eurekaServerFQDN = commonFunctions.getEurekaFQDN()
 
             try {
                 stage("Build Jar") {
@@ -116,13 +117,19 @@ stage("Build and Deploy") {
                             usernameVariable: 'USER',
                             passwordVariable: 'PASSWORD'
                         )]) {
-                            sh 'echo user "$USER" pasword "$PASSWORD"'
-                            sh "podman login ${IMAGE_REG_HOST} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${imagePath}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
-                            sh "podman push ${imagePath}:${tag}"
+                            sh """
+                                echo user "$USER" pasword "$PASSWORD"
+                                podman login ${IMAGE_REG_HOST} --username ${USER} --password ${PASSWORD}
+                                podman build -f ${baseDir}/Dockerfile \
+                                    -t ${imagePath}:${tag} \
+                                    --build-arg BUILD_LIB_DIR=${BUILD_LIB_DIR} \
+                                    --build-arg ARTIFACTORY_FILE=${artifactoryFile} \
+                                     ${SRC_DIR}
+                                podman push ${imagePath}:${tag}
 
-                            sh "podman tag ${imagePath}:${tag} ${imagePath}:latest"
-                            sh "podman push ${imagePath}:latest"
+                                podman tag ${imagePath}:${tag} ${imagePath}:latest
+                                podman push ${imagePath}:latest
+                            """
                         }
                     }
                 }
@@ -170,6 +177,7 @@ stage("Build and Deploy") {
                             export image_pull_secret=${IMAGE_REG_PULL_SECRET}
                             export image_pull_policy=${IMAGE_PULL_POLICY}
                             export image_path=${imagePath}:${tag}
+                            export eureka_server_fqdn=${eurekaServerFQDN}
 
                             envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                             cat ${baseDir}/${manifest}
