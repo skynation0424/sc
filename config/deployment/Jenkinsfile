@@ -66,7 +66,6 @@ stage("Build and Deploy") {
 
             baseDir = "${SRC_DIR}/deployment"
             def props = readProperties  file:"${baseDir}/deploy_env_vars"
-
             applicationName = props["application_name"]
             artifactoryFile = props["artifactory_file"]
             tag = commonFunctions.getTimestamp()
@@ -118,7 +117,7 @@ stage("Build and Deploy") {
                         )]) {
                             def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
                             sh 'echo user "$USER" pasword "$PASSWORD"'
-                            sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
+                            sh "podman login ${IMAGE_REG_HOST} --username ${USER} --password ${PASSWORD}"
                             sh "podman build -f ${baseDir}/Dockerfile -t ${imagePath}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
                             sh "podman push ${imagePath}:${tag}"
 
@@ -146,20 +145,7 @@ stage("Build and Deploy") {
                             echo "Trivy scan results:"
                             echo trivyOutput
 
-                            def vulnerabilityCounts = [:]
-                            def totalLine = trivyOutput.readLines().find { it.startsWith("Total:") }
-                            if (totalLine) {
-                                def countsPart = (totalLine =~ /\((.+)\)/)[0][1]
-                                countsPart.split(",").each { part ->
-                                    def (severity, count) = part.trim().split(":")
-                                    vulnerabilityCounts[severity] = count.trim().toInteger()
-                                }
-                            }
-
-                            echo "Vulnerability counts:"
-                            vulnerabilityCounts.each { severity, count ->
-                                echo "${severity}: ${count}"
-                            }
+                            def vulnerabilityCounts = commonFunctions.getVulnerabilityResult(trivyOutput)
 
                             if (vulnerabilityCounts["CRITICAL"] > 0) {
                                 echo "Critical vulnerabilities found. Aborting the pipeline."
