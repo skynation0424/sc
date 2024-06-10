@@ -16,6 +16,9 @@ stage("Prepare Environment") {
                 container("ssh") {
                     withCredentials([sshUserPrivateKey(credentialsId: "${NFS_CREDENTIAL}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                         sh """
+                            mkdir -p ~/.ssh
+                            ssh-keyscan -H ${NFS_HOST} >> ~/.ssh/known_hosts
+
                             ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
                             ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
                         """
