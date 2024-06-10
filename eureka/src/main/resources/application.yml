@@ -6,7 +6,7 @@ spring:
 eureka:
   instance:
     #hostname: ${EUREKA_HOST}
-    hostname: localhost
+    hostname: ${HOSTNAME}
     preferIpAddress: false
     non-secure-port: ${EUREKA_PORT}
   client:

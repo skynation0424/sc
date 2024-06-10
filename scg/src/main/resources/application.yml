@@ -8,7 +8,8 @@ spring:
 
 eureka:
   instance:
-    hostname: ${HOSTNAME}.scg-headless.${NAMESPACE}.svc.cluster.local
+    hostname: ${HOSTNAME}
+    instanceId: ${HOSTNAME}.scg-headless.${NAMESPACE}.svc.cluster.local
     preferIpAddress: true
     nonSecurePort: 80
     securePort: 443
