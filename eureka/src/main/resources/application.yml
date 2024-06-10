@@ -5,7 +5,9 @@ spring:
     name: eureka
 eureka:
   instance:
-    hostname: ${EUREKA_HOSTNAME}
+    hostname: ${EUREKA_HOST}
+    preferIpAddress: true
+    non-secure-port: ${EUREKA_PORT}
   client:
     registerWithEureka: false   #Eureka서버 자신을 Service Registry에 등록할지 여부
     fetchRegistry: false        #Service registry를 다른 곳에서 가져올 지 여부.Eureka가 Service Registry이므로 false

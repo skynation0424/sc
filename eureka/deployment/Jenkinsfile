@@ -57,7 +57,7 @@ stage("Build and Deploy") {
             if (!hasChangesInConfig) {
                 echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
                 currentBuild.result = 'SUCCESS'
-                commonFunctions.notifySlack("SKIPPED", "#00FF00")
+                //commonFunctions.notifySlack("SKIPPED", "#00FF00")
                 return
             }
             //------------------------------
