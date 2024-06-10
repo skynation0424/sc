@@ -11,6 +11,7 @@ stage("Prepare Environment") {
         ]
     )
     {
+        //-- NFS 공유 볼륨 디렉토리 생성
         node("${PIPELINE_ID}") {
             stage("Prepare Cache Volumes") {
                 container("ssh") {
@@ -67,19 +68,14 @@ stage("Build and Deploy") {
             def props = readProperties  file:"${baseDir}/deploy_env_vars"
 
             applicationName = props["application_name"]
-            artifactoryBuildDir = props["artifactory_build_dir"]
             artifactoryFile = props["artifactory_file"]
-            registry = props["registry"]
-            organization = props["organization"]
             repository = props["repository"]
             tag = commonFunctions.getTimestamp()
             namespace = props["namespace"]
             manifest = props["manifest"]
             imageScanSeverity = props["image_scan_severity"]
-            imageRegCredentialId = props["image_reg_credential_id"]
             sonarProjectKey = props["sonar_project_key"]
             sonarServerId = props["sonar_server_id"]
-            sonarJavaBinaries = props["sonar_java_binaries"]
 
             try {
                 stage("Build Jar") {
@@ -96,7 +92,7 @@ stage("Build and Deploy") {
                                 gradle :${applicationName}:sonar \
                                     -Dsonar.projectName=${sonarProjectKey} \
                                     -Dsonar.projectKey=${sonarProjectKey} \
-                                    -Dsonar.java.binaries=${sonarJavaBinaries}
+                                    -Dsonar.java.binaries=${JAVA_BINARY_DIR}
                             """
                         }
                     }
@@ -117,13 +113,13 @@ stage("Build and Deploy") {
                 stage("Build Container image") {
                     container("podman") {
                         withCredentials([usernamePassword(
-                            credentialsId: "${imageRegCredentialId}",
+                            credentialsId: "${IMAGE_REG_CREDENTIAL}",
                             usernameVariable: 'USER',
                             passwordVariable: 'PASSWORD'
                         )]) {
                             sh 'echo user "$USER" pasword "$PASSWORD"'
                             sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
                             sh "podman push ${registry}/${organization}/${repository}:${tag}"
 
                             sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
@@ -185,6 +181,9 @@ stage("Build and Deploy") {
                             set +a
 
                             export tag=${tag}
+                            export image_pull_secret=${IMAGE_REG_PULL_SECRET}
+                            export image_pull_policy=${IMAGE_PULL_POLICY}
+
                             envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                             cat ${baseDir}/${manifest}
                         """

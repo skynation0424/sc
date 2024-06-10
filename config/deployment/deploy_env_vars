@@ -4,8 +4,6 @@ namespace=ondal
 replicas=1
 server_port=9001
 container_port=18080
-image_pull_secret=dockerhub
-image_pull_policy=Always
 resources_requests_cpu=500m
 resources_requests_memory=512Mi
 resources_limits_cpu=500m
@@ -14,14 +12,9 @@ service_type=ClusterIP
 ingress_host=config.165.192.76.211.nip.io
 
 #-- Jenkins pipeline관련
-image_reg_credential_id=credential_cna
-artifactory_build_dir=build/libs
 artifactory_file=config.jar
 manifest=deploy.yaml
-registry=docker.io
-organization=hiondal
 repository=config
 image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-config
 sonar_server_id=SonarQube
-sonar_java_binaries=build/classes/java/main
