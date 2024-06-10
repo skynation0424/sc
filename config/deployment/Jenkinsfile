@@ -73,7 +73,6 @@ stage("Build and Deploy") {
             manifest = props["manifest"]
             imageScanSeverity = props["image_scan_severity"]
             sonarProjectKey = props["sonar_project_key"]
-            sonarServerId = props["sonar_server_id"]
 
             def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
 
@@ -87,7 +86,7 @@ stage("Build and Deploy") {
 
                 stage("SonarQube Analysis") {
                     container("gradle") {
-                        withSonarQubeEnv("${sonarServerId}") {
+                        withSonarQubeEnv("${SONAR_SERVER_ID}") {
                             sh """
                                 gradle :${applicationName}:sonar \
                                     -Dsonar.projectName=${sonarProjectKey} \

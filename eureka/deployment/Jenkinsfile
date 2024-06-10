@@ -1,217 +1,194 @@
+@Library('pipeline_shared_library')
+
 def SRC_DIR = "eureka"
 def PIPELINE_ID = "${SRC_DIR}-${env.BUILD_NUMBER}"
 
-podTemplate(
-    label: "${PIPELINE_ID}",
-    containers: [
-        containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-        containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-        containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-        containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-    ],
-    volumes: [
-        nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}", readOnly: false ),
-        nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}", readOnly: false)
-    ]
-)
-
-{
-    node("${PIPELINE_ID}") {
-        stage("Get Source") {
-            checkout scm
-        }
-
-        //---- 소스 변경 여부 검사
-        def hasChangesInConfig = checkChangesInDirectory("${SRC_DIR}")
-
-        if (!hasChangesInConfig) {
-            echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
-            currentBuild.result = 'SUCCESS'
-            notifySlack("SKIPPED", "#00FF00")
-            return
-        }
-        //------------------------------
-
-        notifySlack("STARTED", "#FFFF00")
-
-        baseDir = "${SRC_DIR}/deployment"
-        def props = readProperties  file:"${baseDir}/deploy_env_vars"
-
-        applicationName = props["application_name"]
-        artifactoryBuildDir = props["artifactory_build_dir"]
-        artifactoryFile = props["artifactory_file"]
-        registry = props["registry"]
-        organization = props["organization"]
-        repository = props["repository"]
-        tag = getTimestamp()
-        namespace = props["namespace"]
-        manifest = props["manifest"]
-        imageScanSeverity = props["image_scan_severity"]
-        imageRegCredentialId = props["image_reg_credential_id"]
-        sonarProjectKey = props["sonar_project_key"]
-        sonarServerId = props["sonar_server_id"]
-        sonarJavaBinaries = props["sonar_java_binaries"]
-
-        try {
-
-            stage("Build Jar") {
-                container("gradle") {
-                    sh 'echo "Build jar under build directory"'
-                    sh "gradle :${SRC_DIR}:build -x test"
-                }
-            }
-
-            stage("SonarQube Analysis") {
-                container("gradle") {
-                    withSonarQubeEnv("${sonarServerId}") {
+stage("Prepare Environment") {
+    podTemplate(
+        label: "${PIPELINE_ID}",
+        containers: [
+            containerTemplate(name: 'ssh', image: 'kroniak/ssh-client', command: 'cat', ttyEnabled: true),
+        ]
+    )
+    {
+        //-- NFS 공유 볼륨 디렉토리 생성
+        node("${PIPELINE_ID}") {
+            stage("Prepare Cache Volumes") {
+                container("ssh") {
+                    withCredentials([sshUserPrivateKey(credentialsId: "${NFS_CREDENTIAL}", keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                         sh """
-                            gradle :${applicationName}:sonar \
-                                -Dsonar.projectName=${sonarProjectKey} \
-                                -Dsonar.projectKey=${sonarProjectKey} \
-                                -Dsonar.java.binaries=${sonarJavaBinaries}
+                            mkdir -p ~/.ssh
+                            ssh-keyscan -H ${NFS_HOST} >> ~/.ssh/known_hosts
+
+                            ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}"
+                            ssh -i ${SSH_KEY_FILE} ${SSH_USER}@${NFS_HOST} "mkdir -p /${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}"
                         """
                     }
                 }
             }
-            stage("SonarQube Quality Gate") {
-                timeout(time: 10, unit: 'MINUTES') {
-                    def qg = waitForQualityGate()
-                    if (qg.status != 'OK') {
-                        echo "SonarQube Quality Gate failed. Aborting the pipeline."
-                        currentBuild.result = 'FAILURE'
-                        notifySlack("SonarQube Quality Gate failed.", "#FF0000")
-                        error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
-                    }
-                }
+        }
+    }
+}
+
+stage("Build and Deploy") {
+    podTemplate(
+        label: "${PIPELINE_ID}",
+        containers: [
+            containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+            containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+            containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+            containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+            containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+        ],
+        volumes: [
+            nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}", readOnly: false ),
+            nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}", readOnly: false)
+        ]
+    )
+    {
+        node("${PIPELINE_ID}") {
+            stage("Get Source") {
+                checkout scm
             }
 
-            stage("Build Container image") {
-                container("podman") {
-                    withCredentials([usernamePassword(
-                        credentialsId: "${imageRegCredentialId}",
-                        usernameVariable: 'USER',
-                        passwordVariable: 'PASSWORD'
+            //---- 소스 변경 여부 검사
+            def hasChangesInConfig = commonFunctions.checkChangesInDirectory("${SRC_DIR}")
+
+            if (!hasChangesInConfig) {
+                echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
+                currentBuild.result = 'SUCCESS'
+                commonFunctions.notifySlack("SKIPPED", "#00FF00")
+                return
+            }
+            //------------------------------
+
+            commonFunctions.notifySlack("STARTED", "#FFFF00")
+
+            baseDir = "${SRC_DIR}/deployment"
+            def props = readProperties  file:"${baseDir}/deploy_env_vars"
+            applicationName = props["application_name"]
+            artifactoryFile = props["artifactory_file"]
+            tag = commonFunctions.getTimestamp()
+            namespace = props["namespace"]
+            manifest = props["manifest"]
+            imageScanSeverity = props["image_scan_severity"]
+            sonarProjectKey = props["sonar_project_key"]
+
+            def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
+
+            try {
+                stage("Build Jar") {
+                    container("gradle") {
+                        sh 'echo "Build jar under build directory"'
+                        sh "gradle :${SRC_DIR}:build -x test"
+                    }
+                }
+
+                stage("SonarQube Analysis") {
+                    container("gradle") {
+                        withSonarQubeEnv("${SONAR_SERVER_ID}") {
+                            sh """
+                                gradle :${applicationName}:sonar \
+                                    -Dsonar.projectName=${sonarProjectKey} \
+                                    -Dsonar.projectKey=${sonarProjectKey} \
+                                    -Dsonar.java.binaries=${JAVA_BINARY_DIR}
+                            """
+                        }
+                    }
+                }
+
+                stage("SonarQube Quality Gate") {
+                    timeout(time: 10, unit: 'MINUTES') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            echo "SonarQube Quality Gate failed. Aborting the pipeline."
+                            currentBuild.result = 'FAILURE'
+                            commonFunctions.notifySlack("SonarQube Quality Gate failed.", "#FF0000")
+                            error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
+                        }
+                    }
+                }
+
+                stage("Build Container image") {
+                    container("podman") {
+                        withCredentials([usernamePassword(
+                            credentialsId: "${IMAGE_REG_CREDENTIAL}",
+                            usernameVariable: 'USER',
+                            passwordVariable: 'PASSWORD'
                         )]) {
                             sh 'echo user "$USER" pasword "$PASSWORD"'
-                            sh "podman login ${registry} --username ${USER} --password ${PASSWORD}"
-                            sh "podman build -f ${baseDir}/Dockerfile -t ${registry}/${organization}/${repository}:${tag} --build-arg ARTIFACTORY_FILE=${artifactoryBuildDir}/${artifactoryFile} ${SRC_DIR}"
-                            sh "podman push ${registry}/${organization}/${repository}:${tag}"
+                            sh "podman login ${IMAGE_REG_HOST} --username ${USER} --password ${PASSWORD}"
+                            sh "podman build -f ${baseDir}/Dockerfile -t ${imagePath}:${tag} --build-arg ARTIFACTORY_FILE=${BUILD_LIB_DIR}/${artifactoryFile} ${SRC_DIR}"
+                            sh "podman push ${imagePath}:${tag}"
 
-                            sh "podman tag ${registry}/${organization}/${repository}:${tag} ${registry}/${organization}/${repository}:latest"
-                            sh "podman push ${registry}/${organization}/${repository}:latest"
+                            sh "podman tag ${imagePath}:${tag} ${imagePath}:latest"
+                            sh "podman push ${imagePath}:latest"
+                        }
                     }
                 }
-            }
 
-            stage("Scan Image Vulnerability") {
-                timeout(time: 10, unit: 'MINUTES') {
-                    container("trivy") {
-                        def trivyOutput = sh (
-                            script: """
-                                trivy image \
-                                    --cache-dir /${TRIVY_CACHE_DIR} \
-                                    --scanners vuln \
-                                    --severity ${imageScanSeverity} \
-                                    --exit-code 0 \
-                                    ${registry}/${organization}/${repository}:${tag}
-                            """,
-                            returnStdout: true
-                        ).trim()
+                stage("Scan Image Vulnerability") {
+                    timeout(time: 10, unit: 'MINUTES') {
+                        container("trivy") {
+                            def trivyOutput = sh (
+                                script: """
+                                    trivy image \
+                                        --cache-dir /${TRIVY_CACHE_DIR} \
+                                        --scanners vuln \
+                                        --severity ${imageScanSeverity} \
+                                        --exit-code 0 \
+                                        ${imagePath}:${tag}
+                                """,
+                                returnStdout: true
+                            ).trim()
 
-                        echo "Trivy scan results:"
-                        echo trivyOutput
+                            echo "Trivy scan results:"
+                            echo trivyOutput
 
-                        def vulnerabilityCounts = [:]
-                        def totalLine = trivyOutput.readLines().find { it.startsWith("Total:") }
-                        if (totalLine) {
-                            def countsPart = (totalLine =~ /\((.+)\)/)[0][1]
-                            countsPart.split(",").each { part ->
-                                def (severity, count) = part.trim().split(":")
-                                vulnerabilityCounts[severity] = count.trim().toInteger()
+                            def vulnerabilityCounts = commonFunctions.getVulnerabilityResult(trivyOutput)
+
+                            if (vulnerabilityCounts["CRITICAL"] > 0) {
+                                echo "Critical vulnerabilities found. Aborting the pipeline."
+                                currentBuild.result = 'FAILURE'
+                                commonFunctions.notifySlack("Vulnerability scan failed.", "#FF0000")
+                                error "Critical vulnerabilities found."
+                            } else {
+                                echo "No critical vulnerabilities found. Continuing the pipeline."
                             }
                         }
-
-                        echo "Vulnerability counts:"
-                        vulnerabilityCounts.each { severity, count ->
-                            echo "${severity}: ${count}"
-                        }
-
-                        if (vulnerabilityCounts["CRITICAL"] > 0) {
-                            echo "Critical vulnerabilities found. Aborting the pipeline."
-                            currentBuild.result = 'FAILURE'
-                            notifySlack("Vulnerability scan failed.", "#FF0000")
-                            error "Critical vulnerabilities found."
-                        } else {
-                            echo "No critical vulnerabilities found. Continuing the pipeline."
-                        }
                     }
                 }
-            }
 
-            stage( "Generate deployment yaml" ) {
-                container("envsubst") {
-                    sh """
-                        set -a
-                        source ${baseDir}/deploy_env_vars
-                        set +a
+                stage( "Generate deployment yaml" ) {
+                    container("envsubst") {
+                        sh """
+                            set -a
+                            source ${baseDir}/deploy_env_vars
+                            set +a
 
-                        export tag=${tag}
-                        envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
-                        cat ${baseDir}/${manifest}
-                    """
+                            export tag=${tag}
+                            export image_pull_secret=${IMAGE_REG_PULL_SECRET}
+                            export image_pull_policy=${IMAGE_PULL_POLICY}
+                            export image_path=${imagePath}:${tag}
+
+                            envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
+                            cat ${baseDir}/${manifest}
+                        """
+                    }
                 }
-            }
 
-            stage( "Deploy to Cluster" ) {
-                container("kubectl") {
-                    sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
+                stage( "Deploy to Cluster" ) {
+                    container("kubectl") {
+                        sh "kubectl apply -f ${baseDir}/${manifest} -n ${namespace}"
+                    }
                 }
-            }
 
-            notifySlack("${currentBuild.currentResult}", "#00FF00")
-            echo "**** FINISH ALL STAGES : SUCCESS"
-
-        } catch(e) {
-            currentBuild.result = "FAILED"
-            notifySlack("${currentBuild.currentResult}", "#FF0000")
-        }
-    }
-}
-
-/* -------- functions ---------- */
-def notifySlack(STATUS, COLOR) {
-    //slackSend (channel: '#cicd', color: COLOR, message: STATUS+" : " +  "${env.JOB_NAME} [${env.BUILD_NUMBER}] (${env.BUILD_URL})")
-}
-
-def checkChangesInDirectory(String directory) {
-    def changeLogSets = currentBuild.changeSets
-    def hasChangesInDirectory = false
-
-    for (int i = 0; i < changeLogSets.size(); i++) {
-        def entries = changeLogSets[i].items
-        for (int j = 0; j < entries.length; j++) {
-            def entry = entries[j]
-            def files = entry.affectedFiles
-            echo "*** Affected files count: " + files.size()
-            for (int k = 0; k < files.size(); k++) {
-                def file = files[k]
-                echo "*** Affected file: " + file.path
-                if (file.path.startsWith("${directory}/")) {
-                    hasChangesInDirectory = true
-                    break
-                }
+                commonFunctions.notifySlack("${currentBuild.currentResult}", "#00FF00")
+                echo "**** FINISH ALL STAGES : SUCCESS"
+            } catch(e) {
+                currentBuild.result = "FAILED"
+                commonFunctions.notifySlack("${currentBuild.currentResult}", "#FF0000")
             }
         }
     }
-
-    return hasChangesInDirectory
-}
-
-def getTimestamp() {
-    def dateFormat = new java.text.SimpleDateFormat("yyyyMMddHHmmss")
-    def currentDate = new Date()
-    def timestamp = dateFormat.format(currentDate)
-
-    return timestamp
 }

@@ -16,4 +16,3 @@ artifactory_file=config.jar
 manifest=deploy.yaml
 image_scan_severity=CRITICAL,HIGH,MEDIUM
 sonar_project_key=sc-config
-sonar_server_id=SonarQube
