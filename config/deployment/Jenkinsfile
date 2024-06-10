@@ -75,7 +75,7 @@ stage("Build and Deploy") {
             sonarProjectKey = props["sonar_project_key"]
 
             def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
-            def eurekaServerFQDN = commonFunctions.getEurekaFQDN()
+            def eurekaServiceUrl = commonFunctions.getEurekaServiceUrl()
 
             try {
                 stage("Build Jar") {
@@ -177,7 +177,7 @@ stage("Build and Deploy") {
                             export image_pull_secret=${IMAGE_REG_PULL_SECRET}
                             export image_pull_policy=${IMAGE_PULL_POLICY}
                             export image_path=${imagePath}:${tag}
-                            export eureka_server_fqdn=${eurekaServerFQDN}
+                            export eureka_service_url=${eurekaServiceUrl}
 
                             envsubst < ${baseDir}/${manifest}.template > ${baseDir}/${manifest}
                             cat ${baseDir}/${manifest}

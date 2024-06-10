@@ -47,7 +47,7 @@ metadata:
   namespace: ${namespace}
 data:
   SERVER_PORT: "${server_port}"
-  EUREKA_SERVERS: ${eureka_server_fqdn}/eureka/
+  EUREKA_SERVERS: ${eureka_service_url}
   ALLOWED_ORIGINS: ${allowedOrigins}
 
 ---
