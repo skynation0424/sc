@@ -24,7 +24,7 @@ eureka:
 logging:
   level:
     root: INFO
-    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.gateway: DEBUG
 
 #========= 라우팅
 spring.cloud.gateway:
@@ -56,7 +56,7 @@ spring.cloud.gateway:
 
   routes:
     - id: auth
-      uri: lb://MEMBER-SERVICE
+      uri: lb://member-service
       #uri: http://member:18080
       predicates:
         - Path=/api/auth/**
