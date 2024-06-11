@@ -17,5 +17,5 @@ eureka:
       # k8s배포시에는 service오브젝트 이용하여 설정하면 자동으로 자신을 제외한 다른 서버를 찾음
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
   server:
-    enableSelfPreservation: true    #등록된 service의 일시적 장애일때 service registry에서 제거 안함
+    enableSelfPreservation: false    #등록된 service의 일시적 장애일때 service registry에서 제거 안함(85%이상이 heartbeat를 보내지 않을 때 활성화)
     eviction-interval-timer-in-ms: 60000  #지정된 시간마다 유효하지 않은 service를 service registry에서 제거
