@@ -57,8 +57,8 @@ spring.cloud.gateway:
   # 이 예제에서는 Eureka에 Pod IP를 등록하고 SCG가 L/B하고 있음. 로그인요청만 Eureka연동하고, 나머지는 k8s서비스 사용함
   routes:
     - id: auth
-      uri: lb://MEMBER-SERVICE
-      #uri: http://member:18080
+      #uri: lb://member-service
+      uri: http://member:18080
       predicates:
         - Path=/api/auth/**
 
