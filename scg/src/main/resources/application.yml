@@ -52,6 +52,8 @@ spring.cloud.gateway:
     response-timeout: 3000
 
   # Routing
+  discovery.locator.enabled: true
+
   routes:
     - id: auth
       uri: lb://member-service
