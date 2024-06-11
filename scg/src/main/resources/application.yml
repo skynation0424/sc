@@ -76,7 +76,7 @@ spring.cloud.gateway:
       uri: http://mysub:18082
       predicates:
         - Path=/api/my-subs/**
-        -
+
     - id: mygrp
       #uri: lb://mygrp-service
       uri: http://mygrp:18083
