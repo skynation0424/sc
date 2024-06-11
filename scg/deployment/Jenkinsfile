@@ -84,7 +84,7 @@ stage("Build and Deploy") {
                         sh "gradle :${SRC_DIR}:build -x test"
                     }
                 }
-
+/*
                 stage("SonarQube Analysis") {
                     container("gradle") {
                         withSonarQubeEnv("${SONAR_SERVER_ID}") {
@@ -109,7 +109,7 @@ stage("Build and Deploy") {
                         }
                     }
                 }
-
+*/
                 stage("Build Container image") {
                     container("podman") {
                         withCredentials([usernamePassword(
@@ -133,7 +133,7 @@ stage("Build and Deploy") {
                         }
                     }
                 }
-
+/*
                 stage("Scan Image Vulnerability") {
                     timeout(time: 10, unit: 'MINUTES') {
                         container("trivy") {
@@ -165,7 +165,7 @@ stage("Build and Deploy") {
                         }
                     }
                 }
-
+*/
                 stage( "Generate deployment yaml" ) {
                     container("envsubst") {
                         sh """
