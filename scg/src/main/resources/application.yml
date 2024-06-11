@@ -54,8 +54,8 @@ spring.cloud.gateway:
   # Routing
   routes:
     - id: auth
-      #uri: lb://member-service
-      uri: http://member:18080
+      uri: lb://member-service
+      #uri: http://member:18080
       predicates:
         - Path=/api/auth/**
 
