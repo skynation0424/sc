@@ -54,32 +54,38 @@ spring.cloud.gateway:
   # Routing
   routes:
     - id: auth
-      uri: lb://member-service
+      #uri: lb://member-service
+      uri: http://member:18080
       predicates:
         - Path=/api/auth/**
 
     - id: member
-      uri: lb://member-service
+      #uri: lb://member-service
+      uri: http://member:18080
       predicates:
         - Path=/api/members/**
 
     - id: subrecommend
-      uri: lb://subrecommend-service
+      #uri: lb://subrecommend-service
+      uri: http://subrecommend:18081
       predicates:
         - Path=/api/subrecommend/**
 
+    - id: mysub
+      #uri: lb://mysub-service
+      uri: http://mysub:18082
+      predicates:
+        - Path=/api/my-subs/**
+        -
     - id: mygrp
-      uri: lb://mygrp-service
+      #uri: lb://mygrp-service
+      uri: http://mygrp:18083
       predicates:
         - Path=/api/my-groups/**
 
-    - id: mysub
-      uri: lb://mysub-service
-      predicates:
-        - Path=/api/my-subs/**
-
     - id: transfer
-      uri: lb://transfer-service
+      #uri: lb://transfer-service
+      uri: http://transfer:18084
       predicates:
         - Path=/api/transfer/**
       filters:
