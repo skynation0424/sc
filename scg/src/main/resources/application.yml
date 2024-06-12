@@ -5,6 +5,8 @@ spring:
     name: scg
   jwt:
     secret: ${JWT_SECRET:8O2HQ13etL2BWZvYOiWsJ5uWFoLi6NBUG8divYVoCgtHVvlk3dqRksMl16toztDUeBTSIuOOPvHIrYq11G2BwQ==}
+  # -- Load banancer 설정 : 기본 L/B인 Ribbon비활성화
+  cloud.loadbalancer.ribbon.enabled: false
 
 eureka:
   instance:
