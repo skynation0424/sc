@@ -1,5 +1,6 @@
 package com.sc.scg.lb;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
@@ -9,6 +10,7 @@ import java.util.List;
 
 @Component
 @SuppressWarnings("unused")
+@Slf4j
 public class ServiceDiscovery {
     private final DiscoveryClient discoveryClient;
 
@@ -22,15 +24,15 @@ public class ServiceDiscovery {
         List<ServiceInstance> instances = discoveryClient.getInstances(serviceId);
 
         if (instances.isEmpty()) {
-            System.out.println("No instances found for service: " + serviceId);
+            log.info("No instances found for service: {}", serviceId);
         } else {
-            System.out.println("Instances of " + serviceId + ":");
+            log.info("Instances of {}", serviceId);
             for (ServiceInstance instance : instances) {
-                System.out.println("Instance ID: " + instance.getInstanceId());
-                System.out.println("Host: " + instance.getHost());
-                System.out.println("Port: " + instance.getPort());
-                System.out.println("URI: " + instance.getUri());
-                System.out.println("---");
+                log.info("Instance ID: {}", instance.getInstanceId());
+                log.info("Host: {}", instance.getHost());
+                log.info("Port: {}", instance.getPort());
+                log.info("URI: {}", instance.getUri());
+                log.info("---");
             }
         }
     }
