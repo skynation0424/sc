@@ -77,6 +77,9 @@ stage("Build and Deploy") {
             def imagePath = "${IMAGE_REG_HOST}/${IMAGE_REG_ORG}/${applicationName}"
             def eurekaServiceUrl = commonFunctions.getEurekaServiceUrl()
 
+            //-- 개발 시 CI/CD를 빠르게 하기 위해 일부 Stage Skip
+            def skipStages = "sona,trivy"
+
             try {
                 stage("Build Jar") {
                     container("gradle") {
@@ -85,27 +88,29 @@ stage("Build and Deploy") {
                     }
                 }
 
-                stage("SonarQube Analysis") {
-                    container("gradle") {
-                        withSonarQubeEnv("${SONAR_SERVER_ID}") {
-                            sh """
-                                gradle :${applicationName}:sonar \
-                                    -Dsonar.projectName=${sonarProjectKey} \
-                                    -Dsonar.projectKey=${sonarProjectKey} \
-                                    -Dsonar.java.binaries=${JAVA_BINARY_DIR}
-                            """
+                if(!skipStages.contains("sona")) {
+                    stage("SonarQube Analysis") {
+                        container("gradle") {
+                            withSonarQubeEnv("${SONAR_SERVER_ID}") {
+                                sh """
+                                    gradle :${applicationName}:sonar \
+                                        -Dsonar.projectName=${sonarProjectKey} \
+                                        -Dsonar.projectKey=${sonarProjectKey} \
+                                        -Dsonar.java.binaries=${SUB_DIR}/build/classes/java/main,${SUB_DIR_BIZ}/build/classes/java/main
+                                """
+                            }
                         }
                     }
-                }
 
-                stage("SonarQube Quality Gate") {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            echo "SonarQube Quality Gate failed. Aborting the pipeline."
-                            currentBuild.result = 'FAILURE'
-                            commonFunctions.notifySlack("SonarQube Quality Gate failed.", "#FF0000")
-                            error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
+                    stage("SonarQube Quality Gate") {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                echo "SonarQube Quality Gate failed. Aborting the pipeline."
+                                currentBuild.result = 'FAILURE'
+                                commonFunctions.notifySlack("SonarQube Quality Gate failed.", "#FF0000")
+                                error "Pipeline aborted due to SonarQube Quality Gate failure: ${qg.status}"
+                            }
                         }
                     }
                 }
@@ -134,33 +139,35 @@ stage("Build and Deploy") {
                     }
                 }
 
-                stage("Scan Image Vulnerability") {
-                    timeout(time: 10, unit: 'MINUTES') {
-                        container("trivy") {
-                            def trivyOutput = sh (
-                                script: """
-                                    trivy image \
-                                        --cache-dir /${TRIVY_CACHE_DIR} \
-                                        --scanners vuln \
-                                        --severity ${imageScanSeverity} \
-                                        --exit-code 0 \
-                                        ${imagePath}:${tag}
-                                """,
-                                returnStdout: true
-                            ).trim()
+                if(!skipStages.contains("trivy")) {
+                    stage("Scan Image Vulnerability") {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            container("trivy") {
+                                def trivyOutput = sh (
+                                    script: """
+                                        trivy image \
+                                            --cache-dir /${TRIVY_CACHE_DIR} \
+                                            --scanners vuln \
+                                            --severity ${imageScanSeverity} \
+                                            --exit-code 0 \
+                                            ${imagePath}:${tag}
+                                    """,
+                                    returnStdout: true
+                                ).trim()
 
-                            echo "Trivy scan results:"
-                            echo trivyOutput
+                                echo "Trivy scan results:"
+                                echo trivyOutput
 
-                            def vulnerabilityCounts = commonFunctions.getVulnerabilityResult(trivyOutput)
+                                def vulnerabilityCounts = commonFunctions.getVulnerabilityResult(trivyOutput)
 
-                            if (vulnerabilityCounts["CRITICAL"] > 0) {
-                                echo "Critical vulnerabilities found. Aborting the pipeline."
-                                currentBuild.result = 'FAILURE'
-                                commonFunctions.notifySlack("Vulnerability scan failed.", "#FF0000")
-                                error "Critical vulnerabilities found."
-                            } else {
-                                echo "No critical vulnerabilities found. Continuing the pipeline."
+                                if (vulnerabilityCounts["CRITICAL"] > 0) {
+                                    echo "Critical vulnerabilities found. Aborting the pipeline."
+                                    currentBuild.result = 'FAILURE'
+                                    commonFunctions.notifySlack("Vulnerability scan failed.", "#FF0000")
+                                    error "Critical vulnerabilities found."
+                                } else {
+                                    echo "No critical vulnerabilities found. Continuing the pipeline."
+                                }
                             }
                         }
                     }
