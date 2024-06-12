@@ -8,7 +8,7 @@ def merge_files(src_directories, output_file, extensions=['.java', '.yml', '.gra
                     if any(file.endswith(ext) for ext in extensions):
                         file_path = os.path.join(root, file)
                         try:
-                            with open(file_path, 'r') as infile:
+                            with open(file_path, 'r', encoding='utf-8') as infile:
                                 content = infile.read()
                                 if content:
                                     outfile.write(f"// File: {file_path}\n")
@@ -25,7 +25,7 @@ def merge_files(src_directories, output_file, extensions=['.java', '.yml', '.gra
             file_path = os.path.join(os.getcwd(), file_name)
             if os.path.isfile(file_path):
                 try:
-                    with open(file_path, 'r') as infile:
+                    with open(file_path, 'r', encoding='utf-8') as infile:
                         content = infile.read()
                         if content:
                             outfile.write(f"// File: {file_path}\n")
