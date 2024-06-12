@@ -1,7 +1,7 @@
 import os
 
 def merge_files(src_directories, output_file, extensions=['.java', '.yml', '.gradle']):
-    with open(output_file, 'w') as outfile:
+    with open(output_file, 'w', encoding='utf-8') as outfile:
         for src_directory in src_directories:
             for root, dirs, files in os.walk(src_directory):
                 for file in files:

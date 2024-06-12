@@ -112,11 +112,11 @@ spring.cloud.gateway:
         connect-timeout: 1000
         response-timeout: 3000
 
-# 그 외 application.yml에 설정 예제는 아래 페이지 참조
-# https://happycloud-lee.tistory.com/218
-#========================
+  # 그 외 application.yml에 설정 예제는 아래 페이지 참조
+  # https://happycloud-lee.tistory.com/218
+  #========================
 
-#========= Default Filters ========
+  #========= Default Filters ========
   default-filters:
     #-- 인증 검사: JWT Token 유효성 검사
     - AuthorizationHeaderFilter
@@ -136,3 +136,4 @@ spring.cloud.gateway:
     # 중요) 응답에 지정된 헤더가 중복되면 하나만 남김. 다른 필터와의 우선순위로 동작 안할 수 있으므로 가장 마지막에 지정
     - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 #=====================================
+
