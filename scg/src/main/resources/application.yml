@@ -26,6 +26,13 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: INFO
 
+# -- Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, env, mappings, routes
+
 #========= 라우팅
 spring.cloud.gateway:
   # CORS
