@@ -13,15 +13,28 @@ spring:
   # -- Load Balancer의 캐시 타입 설정
   cache.type: caffeine
 
+# Eureka client 설정
+# hostname은 서버를 구별하는 유일한 값이면 됨. instanceId는 Eureka에 등록된느 ID임 (라우팅할 때 주소 아님)
+# 라우팅 주소는 아래와 같이 결정됨
+# - preferIpAddress: false -> http://hostname:nonSecurePort, https://hostname:securePort
+# - preferIpAddress: true  -> http://ip:nonSecurePort, https://ip:securePort
+# 연결되는 주소는 https://{eureka ingress host}/eureka/apps/{service id}의 결과에서 homepageUrl값임
+# 생존신고를 하는 주기(lease-renewal-interval-in-seconds. 기본 30초)와
+# 만료 간주 시간(Eureka서버가 몇 초 동안 생존 신고를 못 받으면 만료로 간주할 지 판단하는 시간. 기본 90초)을 적절히 정의
+# preferIpAddress를 false로 하고 hostname에 k8s DNS주소를 설정하는 방식은 StatefulSet으로 배포하는 경우에만 동작함
+# (Deployment로 배포한 Pod는 고유 주소가 생기지 않기 때문임)
 eureka:
   instance:
     hostname: ${HOSTNAME:localhost}
-    instanceId: ${POD_IP:localhost}:${SERVER_PORT:19080}
+    instanceId: ${HOSTNAME:localhost}
     preferIpAddress: true
     nonSecurePort: ${SERVER_PORT:19080}
     securePort: 443
     nonSecurePortEnabled: true
     securePortEnabled: false
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
+
   client:
     service-url:
       defaultZone: ${EUREKA_SERVERS:http://eureka1.127.0.0.1.nip.io:8761/eureka/,http://eureka2.127.0.0.1.nip.io:8762/eureka/}
