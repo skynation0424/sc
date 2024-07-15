@@ -159,4 +159,3 @@ spring.cloud.gateway:
     # 중요) 응답에 지정된 헤더가 중복되면 하나만 남김. 다른 필터와의 우선순위로 동작 안할 수 있으므로 가장 마지막에 지정
     - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 #=====================================
-
