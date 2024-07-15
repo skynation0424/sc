@@ -82,36 +82,41 @@ spring.cloud.gateway:
   # 모든 서비스가 k8s환경에서만 서비스 된다면 Eureka를 안 쓰고 k8s서비스로 L/B하는게 제일 좋음
   # 왜냐하면 k8s서비스의 liveness/readiness 체크하여 연결하는 기능을 사용할 수 있고, 불필요한 Eureka 네트워킹을 안할 수 있기 때문임
   # 이 예제에서는 Eureka에 Pod IP를 등록하고 SCG가 L/B하고 있음. 로그인요청만 Eureka연동하고, 나머지는 k8s서비스 사용함
-  routes:
+  routes
+    - id: helloworld
+      uri: lb://helloworld
+      predicates:
+        - Path=/hey/**
+      filters:
+        - RewritePath=/hey/(?<uri>.*), /${uri}
+
     - id: auth
       uri: lb://member-service
-      #uri: http://member:18080
-      #uri: http://172.17.0.24:18080
       predicates:
         - Path=/api/auth/**
 
     - id: member
-      uri: http://member:18080
+      uri: lb://member-service
       predicates:
         - Path=/api/members/**
 
     - id: subrecommend
-      uri: http://subrecommend:18081
+      uri: lb://subrecommend-service
       predicates:
         - Path=/api/subrecommend/**
 
     - id: mysub
-      uri: http://mysub:18082
+      uri: lb://mysub-service
       predicates:
         - Path=/api/my-subs/**
 
     - id: mygrp
-      uri: http://mygrp:18083
+      uri: lb://mygrp-service
       predicates:
         - Path=/api/my-groups/**
 
     - id: transfer
-      uri: http://transfer:18084
+      uri: lb://transfer-service
       predicates:
         - Path=/api/transfer/**
       filters:

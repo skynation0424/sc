@@ -1,4 +1,4 @@
-package com.sc.scg.filter.auth;
+package com.subride.sc.scg.filter.auth;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.slf4j.Slf4j;

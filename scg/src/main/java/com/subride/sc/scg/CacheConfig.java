@@ -1,4 +1,4 @@
-package com.sc.scg;
+package com.subride.sc.scg;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.cache.CacheManager;

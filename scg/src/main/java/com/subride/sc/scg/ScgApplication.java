@@ -1,6 +1,6 @@
-package com.sc.scg;
+package com.subride.sc.scg;
 
-import com.sc.scg.lb.ServiceDiscovery;
+import com.subride.sc.scg.lb.ServiceDiscovery;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

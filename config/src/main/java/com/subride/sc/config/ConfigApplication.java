@@ -1,4 +1,4 @@
-package com.sc.config;
+package com.subride.sc.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

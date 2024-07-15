@@ -1,4 +1,4 @@
-package com.sc.scg.filter.auth;
+package com.subride.sc.scg.filter.auth;
 
 import io.jsonwebtoken.Jwts;
 import org.springframework.beans.factory.annotation.Value;
