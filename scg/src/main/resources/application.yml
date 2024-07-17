@@ -57,6 +57,7 @@ management:
 spring.cloud.gateway:
   # CORS
   globalcors:
+    allowedOrgins: ${ALLOWED_ORIGINS}
     cors-configurations:
       '[/**]':
         allowedOrigins: "https://aaa.bbb.com"
@@ -65,7 +66,6 @@ spring.cloud.gateway:
       '[/api/**]':
         allowedOrigins:
           - http://localhost:3000
-          - ${ALLOWED_ORIGINS:"http://localhost:3000"}
         allowedMethods:
           - GET
           - PUT
