@@ -58,21 +58,7 @@ spring.cloud.gateway:
   # CORS
   globalcors:
     allowedOrgins: ${ALLOWED_ORIGINS}
-    cors-configurations:
-      '[/**]':
-        allowedOrigins: "https://aaa.bbb.com"
-        allowedMethods:
-          - GET
-      '[/api/**]':
-        allowedOrigins:
-          - http://localhost:3000
-        allowedMethods:
-          - GET
-          - PUT
-          - POST
-          - DELETE
-          - OPTIONS
-        allowedHeaders: "*"
+
   # Timeout
   httpclient:
     connect-timeout: 1000
