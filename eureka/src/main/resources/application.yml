@@ -4,6 +4,16 @@ spring:
   application:
     name: eureka
 eureka:
+  instance:
+    hostname: ${HOSTNAME}
+    instanceId: ${HOSTNAME}:${SERVER_PORT}
+    preferIpAddress: true
+    nonSecurePort: ${SERVER_PORT}
+    securePort: 443
+    nonSecurePortEnabled: true
+    securePortEnabled: false
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
   client:
     registerWithEureka: true   #Eureka서버 자신을 Service Registry에 등록할지 여부. 복수서버면 true
     fetchRegistry: true        #Service registry를 다른 곳에서 가져올 지 여부. 복수서버면 true
