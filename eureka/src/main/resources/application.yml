@@ -5,10 +5,10 @@ spring:
     name: eureka
 eureka:
   instance:
-    hostname: ${HOSTNAME}
-    instanceId: ${HOSTNAME}:${SERVER_PORT}
+    hostname: ${HOSTNAME:localhost}
+    instanceId: ${HOSTNAME}:${SERVER_PORT:8761}
     preferIpAddress: true
-    nonSecurePort: ${SERVER_PORT}
+    nonSecurePort: ${SERVER_PORT:8761}
     securePort: 443
     nonSecurePortEnabled: true
     securePortEnabled: false

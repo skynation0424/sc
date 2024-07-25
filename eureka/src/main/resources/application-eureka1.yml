@@ -9,6 +9,7 @@ eureka:
     #참고로 hostname을 지정 안하고 defaultZone에 자신을 제외한 Eureka서버를 잘 지정하기만 해도 됨
     hostname: eureka1.127.0.0.1.nip.io
     instanceId: eureka1.127.0.0.1.nip.io
+    nonSecurePort: 8761
   client:
     registerWithEureka: true   #Eureka서버 자신을 Service Registry에 등록할지 여부. 복수서버면 true
     fetchRegistry: true        #Service registry를 다른 곳에서 가져올 지 여부. 복수서버면 true

@@ -9,6 +9,7 @@ eureka:
     #참고로 hostname을 지정 안하고 defaultZone에 자신을 제외한 Eureka서버를 잘 지정하기만 해도 됨
     hostname: eureka2.127.0.0.1.nip.io
     instanceId: eureka2.127.0.0.1.nip.io
+    nonSecurePort: 8762
   client:
     serviceUrl:
       defaultZone: http://eureka1.127.0.0.1.nip.io:8761/eureka/
