@@ -44,7 +44,7 @@ stage("Build and Deploy") {
             if (!libs.checkSourceChanges()) {
                 echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
                 currentBuild.result = 'SUCCESS'
-                return
+                return true
             }
 
             libs.notifySlack("STARTED", "#FFFF00")
