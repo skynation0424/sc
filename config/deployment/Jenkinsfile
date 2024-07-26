@@ -60,8 +60,10 @@ stage("Build and Deploy") {
                 stage("Build Jar") {
                     libs.buildJar()
                 }
-
+                echo "!!! Next"
                 if(!skipStages.contains("sona")) {
+                    echo "** start sonarqube"
+
                     //-- Build: 소스품질 검사
                     stage("SonarQube Analysis") {
                         libs.sonarQubeAnalysisForJava()
