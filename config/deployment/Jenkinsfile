@@ -62,7 +62,7 @@ stage("Build and Deploy") {
                 }
 
                 if(!skipStages.contains("sona")) {
-                    echo "*** start sonarqube !"
+                    echo "*** start sonarqube !!"
 
                     //-- Build: 소스품질 검사
                     stage("SonarQube Analysis") {
