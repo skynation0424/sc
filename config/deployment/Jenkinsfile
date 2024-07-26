@@ -60,7 +60,7 @@ stage("Build and Deploy") {
                 stage("Build Jar") {
                     libs.buildJar()
                 }
-                echo "!!! Next"
+
                 if(!skipStages.contains("sona")) {
                     echo "** start sonarqube"
 
