@@ -105,6 +105,7 @@ pipeline {
                    } // End node
                 } //End podTemplate
              } //End scripts
+             echo "End of pipeline."
           } // End steps
        } // End stage("Build and Deploy")
 
