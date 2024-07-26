@@ -4,8 +4,8 @@
 echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
 
-//--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
-libs.setGlobalVariables("sc", "config", "1.0.0")
+//--전역변수 셋팅: 서비스그룹, 서비스ID, 버전, Git branch
+libs.setGlobalVariables("sc", "config", "1.0.1", "main")
 
 //-- 실행환경 준비
 stage("Prepare Environment") {
@@ -13,7 +13,6 @@ stage("Prepare Environment") {
     if (!hasChanges) {
         currentBuild.result = 'SUCCESS'
         currentBuild.description = "No changes. Stop pipeline."
-        echo currentBuild.description
         return
     }
 }
