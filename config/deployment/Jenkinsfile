@@ -42,7 +42,7 @@ stage("Build and Deploy") {
 
             //---- 소스 변경 여부 검사
             if (!libs.checkSourceChanges()) {
-                echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
+                echo "No changes in <${libs.envVars.SRC_DIR}> directory. Skipping pipeline."
                 currentBuild.result = 'SUCCESS'
                 return true
             }
