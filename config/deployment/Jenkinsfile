@@ -13,7 +13,7 @@ stage("Prepare Environment") {
     if (!hasChanges) {
         currentBuild.result = 'SUCCESS'
         currentBuild.description = "소스변경이 없어 파이프라인 수행하지 않음"
-        echo "소스 변경이 없어 파이프라인을 종료합니다."
+        echo currentBuild.description
         return
     }
 }
