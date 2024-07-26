@@ -35,97 +35,99 @@ pipeline {
 			}
 		}
 
-		stage("Build and Deploy") {
-			steps {
-				script {
-					def volumes = [
-						nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-					]
-					if (libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SC || libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SUBRIDE) {
-						volumes.add(
-							nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-						)
-					}
-					podTemplate(
-						label: "${libs.envVars.PIPELINE_ID}",
-						containers: [
-							containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-							containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-							containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-						],
-						volumes: volumes
-					) {
-						node("${libs.envVars.PIPELINE_ID}") {
-							libs.notifySlack("STARTED", "#FFFF00")
+        if (hasChanges) {
+            stage("Build and Deploy") {
+                steps {
+                    script {
+                        def volumes = [
+                            nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+                        ]
+                        if (libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SC || libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SUBRIDE) {
+                            volumes.add(
+                                nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+                            )
+                        }
+                        podTemplate(
+                            label: "${libs.envVars.PIPELINE_ID}",
+                            containers: [
+                                containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+                                containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+                                containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+                                containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+                                containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+                            ],
+                            volumes: volumes
+                        ) {
+                            node("${libs.envVars.PIPELINE_ID}") {
+                                libs.notifySlack("STARTED", "#FFFF00")
 
-							stage("Get Source") {
-								checkout scm
-							}
+                                stage("Get Source") {
+                                    checkout scm
+                                }
 
-							//-- 실행을 위한 변수 셋팅
-							libs.setCICDVariables()
+                                //-- 실행을 위한 변수 셋팅
+                                libs.setCICDVariables()
 
-							//-- 개발 시 CI/CD를 빠르게 하기 위해 일부 Stage Skip(sona,trivy 지정 가능)
-							def skipStages = "sonar, trivy"
+                                //-- 개발 시 CI/CD를 빠르게 하기 위해 일부 Stage Skip(sona,trivy 지정 가능)
+                                def skipStages = "sonar, trivy"
 
-							try {
-								//Build: build jar
-								stage("Build Jar") {
-									libs.buildJar()
-								}
+                                try {
+                                    //Build: build jar
+                                    stage("Build Jar") {
+                                        libs.buildJar()
+                                    }
 
-								if(!skipStages.contains("sona")) {
-									//-- Build: 소스품질 검사
-									stage("SonarQube Analysis") {
-										libs.sonarQubeAnalysisForJava()
-									}
+                                    if(!skipStages.contains("sona")) {
+                                        //-- Build: 소스품질 검사
+                                        stage("SonarQube Analysis") {
+                                            libs.sonarQubeAnalysisForJava()
+                                        }
 
-									//-- Build: Quality Gate 충족 검사
-									stage("Verify Quality Gate") {
-										libs.verifyQualityGate()
-									}
-								}
+                                        //-- Build: Quality Gate 충족 검사
+                                        stage("Verify Quality Gate") {
+                                            libs.verifyQualityGate()
+                                        }
+                                    }
 
-								//-- Build: Build Container image
-								stage("Build Container Image") {
-									libs.buildContainerImageForJava()
-								}
+                                    //-- Build: Build Container image
+                                    stage("Build Container Image") {
+                                        libs.buildContainerImageForJava()
+                                    }
 
-								//-- Build: image 보안 취약성 점검
-								if(!skipStages.contains("trivy")) {
-									stage("Scan Image Vulnerability") {
-										libs.scanContainerImageVulnerability()
-									}
-								}
+                                    //-- Build: image 보안 취약성 점검
+                                    if(!skipStages.contains("trivy")) {
+                                        stage("Scan Image Vulnerability") {
+                                            libs.scanContainerImageVulnerability()
+                                        }
+                                    }
 
-								//-- Release: Push Container image
-								stage("Push Container Image") {
-									libs.pushContainerImage()
-								}
+                                    //-- Release: Push Container image
+                                    stage("Push Container Image") {
+                                        libs.pushContainerImage()
+                                    }
 
-								//-- Deploy: 배포 manifest 파일 생성
-								stage("Generate Manifest") {
-									libs.generateManifest()
-								}
+                                    //-- Deploy: 배포 manifest 파일 생성
+                                    stage("Generate Manifest") {
+                                        libs.generateManifest()
+                                    }
 
-								//-- Deploy: 배포
-								stage("Deploy") {
-									//libs.deploy()
-								}
+                                    //-- Deploy: 배포
+                                    stage("Deploy") {
+                                        //libs.deploy()
+                                    }
 
-								libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-								echo "**** FINISH ALL STAGES : SUCCESS"
-							} catch(e) {
-								currentBuild.result = "FAILED"
-								libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
-								throw e
-							}
-						}
-					}
-				}
-			}
-		}
+                                    libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+                                    echo "**** FINISH ALL STAGES : SUCCESS"
+                                } catch(e) {
+                                    currentBuild.result = "FAILED"
+                                    libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+                                    throw e
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 	}
 }
