@@ -12,6 +12,8 @@ stage("Prepare Environment") {
     def hasChanges = libs.prepareEnvironment()
     if (!hasChanges) {
         currentBuild.result = 'SUCCESS'
+        currentBuild.description = "소스 변경이 없어 수행하지 않음"
+        echo ("소스 변경이 없어 파이프라인을 종료합니다.")
         return
     }
 }
