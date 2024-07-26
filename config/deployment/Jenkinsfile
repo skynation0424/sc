@@ -3,6 +3,7 @@
 @Library('pipeline_shared_library') _
 echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
+def hasChanges = true
 
 pipeline {
 	agent any
@@ -24,7 +25,7 @@ pipeline {
 		stage("Prepare Environment") {
 			steps {
 				script {
-					def hasChanges = libs.prepareEnvironment()
+					hasChanges = libs.prepareEnvironment()
 					if (!hasChanges) {
 						currentBuild.result = 'SUCCESS'
 						currentBuild.description = "No pipeline performed because no sources changed"
