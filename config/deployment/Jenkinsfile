@@ -98,18 +98,14 @@ pipeline {
 
 			post {
 				success {
-					steps {
-						script {
-							libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-							echo "**** FINISH ALL STAGES : SUCCESS"
-						}
+					script {
+						libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+						echo "**** FINISH ALL STAGES : SUCCESS"
 					}
 				}
 				failure {
-					steps {
-						script {
-							libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
-						}
+					script {
+						libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
 					}
 				}
 			}
