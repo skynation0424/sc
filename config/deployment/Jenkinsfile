@@ -25,110 +25,95 @@ pipeline {
 		stage("Build and Deploy") {
 			when { expression { return hasChanges } }
 
+			stages {
+				stage("Prepare Pod") {
+					steps {
+						script {
+							def volumes = [
+								nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}",
+									serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+							]
+
+							if (libs.envVars.SERVICE_GROUP in [libs.envVars.SERVICE_GROUP_SC, libs.envVars.SERVICE_GROUP_SUBRIDE]) {
+								volumes.add(
+									nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}",
+										serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+								)
+							}
+
+							podTemplate(label: "${libs.envVars.PIPELINE_ID}",
+								containers: [
+									containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+									containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+									containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+									containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+									containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+								],
+								volumes: volumes
+							) {
+								node("${libs.envVars.PIPELINE_ID}") {
+									libs.notifySlack("STARTED", "#FFFF00")
+
+									stage("Get Source") { checkout scm }
+									libs.setCICDVariables()
+
+									def skipStages = "sonar, trivy"
+
+									stage("Build Jar") {
+										steps { script { libs.buildJar() } }
+									}
+
+									stage("SonarQube Analysis") {
+										when { expression { return !"sonar".toUpperCase() in skipStages } }
+										steps { script { libs.sonarQubeAnalysisForJava() } }
+									}
+
+									stage("Verify Quality Gate") {
+										when { expression { return !"sonar".toUpperCase() in skipStages } }
+										steps { script { libs.verifyQualityGate() } }
+									}
+
+									stage("Build Container Image") {
+										steps { script { libs.buildContainerImageForJava() } }
+									}
+
+									stage("Scan Image Vulnerability") {
+										when { expression { return !"trivy".toUpperCase() in skipStages } }
+										steps { script { libs.scanContainerImageVulnerability() } }
+									}
+
+									stage("Push Container Image") {
+										steps { script { libs.pushContainerImage() } }
+									}
+
+									stage("Generate Manifest") {
+										steps { script { libs.generateManifest() } }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+			post {
+				success {
+					libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+					echo "**** FINISH ALL STAGES : SUCCESS"
+				}
+				failure {
+					libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+				}
+			}
+		}
+
+		stage("Notify No Changes") {
+			when { expression { return !hasChanges } }
 			steps {
 				script {
-					def volumes = [
-						nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}",
-							serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-					]
-
-					if (libs.envVars.SERVICE_GROUP in [libs.envVars.SERVICE_GROUP_SC, libs.envVars.SERVICE_GROUP_SUBRIDE]) {
-						volumes.add(
-							nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}",
-								serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-						)
-					}
-
-					podTemplate(label: "${libs.envVars.PIPELINE_ID}",
-						containers: [
-							containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-							containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-							containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-						],
-						volumes: volumes
-					) {
-						node("${libs.envVars.PIPELINE_ID}") {
-							libs.notifySlack("STARTED", "#FFFF00")
-
-							stage("Get Source") { checkout scm }
-							libs.setCICDVariables()
-
-							def skipStages = "sonar, trivy"
-
-							try {
-								stage("Build Jar") {
-									when { expression { return hasChanges } }
-									steps { script { libs.buildJar() } }
-								}
-
-								stage("SonarQube Analysis") {
-									when {
-										allOf {
-											expression { return hasChanges }
-											expression { return !"sonar".toUpperCase() in skipStages }
-										}
-									}
-									steps { script { libs.sonarQubeAnalysisForJava() } }
-								}
-
-								stage("Verify Quality Gate") {
-									when {
-										allOf {
-											expression { return hasChanges }
-											expression { return !"sonar".toUpperCase() in skipStages }
-										}
-									}
-									steps { script { libs.verifyQualityGate() } }
-								}
-
-								stage("Build Container Image") {
-									when { expression { return hasChanges } }
-									steps { script { libs.buildContainerImageForJava() } }
-								}
-
-								stage("Scan Image Vulnerability") {
-									when {
-										allOf {
-											expression { return hasChanges }
-											expression { return !"trivy".toUpperCase() in skipStages }
-										}
-									}
-									steps { script { libs.scanContainerImageVulnerability() } }
-								}
-
-								stage("Push Container Image") {
-									when { expression { return hasChanges } }
-									steps { script { libs.pushContainerImage() } }
-								}
-
-								stage("Generate Manifest") {
-									when { expression { return hasChanges } }
-									steps { script { libs.generateManifest() } }
-								}
-							} catch (e) {
-								currentBuild.result = "FAILED"
-								libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
-								throw e
-							}
-						}
-					}
-
-					stage("Notify") {
-						steps {
-							script {
-								if (hasChanges) {
-									libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-									echo "**** FINISH ALL STAGES : SUCCESS"
-								} else {
-									libs.notifySlack("SKIPPED", "#A9A9A9")
-									echo "**** NO CHANGES DETECTED, SKIPPING PIPELINE ****"
-									currentBuild.result = 'SUCCESS'
-								}
-							}
-						}
-					}
+					libs.notifySlack("SKIPPED", "#A9A9A9")
+					echo "**** NO CHANGES DETECTED, SKIPPING PIPELINE ****"
+					currentBuild.result = 'SUCCESS'
 				}
 			}
 		}
