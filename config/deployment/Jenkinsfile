@@ -37,7 +37,7 @@ stage("Build and Deploy") {
        volumes: volumes
     )
     {
-        node("${PIPELINE_ID}") {
+        node("${libs.envVars.PIPELINE_ID}") {
             stage("Get Source") {
                 checkout scm
             }
