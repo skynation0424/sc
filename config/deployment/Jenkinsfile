@@ -16,9 +16,7 @@ pipeline {
 				script {
 					hasChanges = libs.prepareEnvironment()
 					if (!hasChanges) {
-						currentBuild.result = 'SUCCESS'
 						currentBuild.description = "No pipeline performed because no sources changed"
-						//return
 					}
 				}
 			}
@@ -60,29 +58,74 @@ pipeline {
 							def skipStages = "sonar, trivy"
 
 							try {
-								stage("Build Jar") { libs.buildJar() }
-
-								if(!skipStages.contains("sonar")) {
-									stage("SonarQube Analysis") { libs.sonarQubeAnalysisForJava() }
-									stage("Verify Quality Gate") { libs.verifyQualityGate() }
+								stage("Build Jar") {
+									when { expression { return hasChanges } }
+									steps { script { libs.buildJar() } }
 								}
 
-								stage("Build Container Image") { libs.buildContainerImageForJava() }
-
-								if(!skipStages.contains("trivy")) {
-									stage("Scan Image Vulnerability") { libs.scanContainerImageVulnerability() }
+								stage("SonarQube Analysis") {
+									when {
+										allOf {
+											expression { return hasChanges }
+											expression { return !"sonar".toUpperCase() in skipStages }
+										}
+									}
+									steps { script { libs.sonarQubeAnalysisForJava() } }
 								}
 
-								stage("Push Container Image") { libs.pushContainerImage() }
-								stage("Generate Manifest") { libs.generateManifest() }
-								//stage("Deploy") { libs.deploy() }
+								stage("Verify Quality Gate") {
+									when {
+										allOf {
+											expression { return hasChanges }
+											expression { return !"sonar".toUpperCase() in skipStages }
+										}
+									}
+									steps { script { libs.verifyQualityGate() } }
+								}
 
-								libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-								echo "**** FINISH ALL STAGES : SUCCESS"
-							} catch(e) {
+								stage("Build Container Image") {
+									when { expression { return hasChanges } }
+									steps { script { libs.buildContainerImageForJava() } }
+								}
+
+								stage("Scan Image Vulnerability") {
+									when {
+										allOf {
+											expression { return hasChanges }
+											expression { return !"trivy".toUpperCase() in skipStages }
+										}
+									}
+									steps { script { libs.scanContainerImageVulnerability() } }
+								}
+
+								stage("Push Container Image") {
+									when { expression { return hasChanges } }
+									steps { script { libs.pushContainerImage() } }
+								}
+
+								stage("Generate Manifest") {
+									when { expression { return hasChanges } }
+									steps { script { libs.generateManifest() } }
+								}
+							} catch (e) {
 								currentBuild.result = "FAILED"
 								libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
 								throw e
+							}
+						}
+					}
+
+					stage("Notify") {
+						steps {
+							script {
+								if (hasChanges) {
+									libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+									echo "**** FINISH ALL STAGES : SUCCESS"
+								} else {
+									libs.notifySlack("SKIPPED", "#A9A9A9")
+									echo "**** NO CHANGES DETECTED, SKIPPING PIPELINE ****"
+									currentBuild.result = 'SUCCESS'
+								}
 							}
 						}
 					}
