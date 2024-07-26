@@ -53,7 +53,7 @@ stage("Build and Deploy") {
             libs.setCICDVariables()
 
             //-- 개발 시 CI/CD를 빠르게 하기 위해 일부 Stage Skip(sona,trivy 지정 가능)
-            def skipStages = ""
+            def skipStages = "sonar, trivy"
 
             try {
                 //Build: build jar
