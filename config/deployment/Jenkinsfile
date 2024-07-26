@@ -4,13 +4,20 @@
 echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
 
+properties([
+    parameters([
+        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: 'Service Group'),
+        string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID'),
+        string(name: 'SERVICE_VERSION', defaultValue: '1.0.1', description: 'Service Version')
+    ]),
+    pipelineTriggers([])
+])
+
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: 'Service Group')
-        string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID')
-        string(name: 'SERVICE_VERSION', defaultValue: '1.0.1', description: 'Service Version')
+    options {
+        quietPeriod(0)
     }
 
     stages {
