@@ -20,8 +20,8 @@ pipeline {
                 if (!hasChanges) {
                     currentBuild.result = 'SUCCESS'
                     currentBuild.description = "No pipeline performed because no sources changed"
-                    echo "No changes detected. Skipping the pipeline."
-                    return  // 파이프라인 종료
+                    //echo "No changes detected. Skipping the pipeline."
+                    //return  // 파이프라인 종료
                 }
              }
           }
