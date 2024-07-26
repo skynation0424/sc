@@ -3,104 +3,122 @@ def libs = pipelineLibraries(this)
 def hasChanges = false
 
 pipeline {
-	agent any
-	options { quietPeriod(0) }
+    agent any
+    options { quietPeriod(0) }
 
-	stages {
-		stage("Set global variables") {
-			steps { script { libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION) } }
-		}
+    stages {
+       // 전역 변수 설정 stage
+       stage("Set global variables") {
+          steps { script { libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION) } }
+       }
 
-		stage("Prepare Environment") {
-			steps {
-				script {
-					hasChanges = libs.prepareEnvironment()
-					if (!hasChanges) {
-						currentBuild.result = 'SUCCESS'
-						currentBuild.description = "No pipeline performed because no sources changed"
+       // 환경 준비 stage
+       stage("Prepare Environment") {
+          steps {
+             script {
+                hasChanges = libs.prepareEnvironment()
+             }
+          }
+       }
 
-					}
-				}
-			}
-		}
+       // 빌드 및 배포 stage
+       stage("Build and Deploy") {
+          when { expression { return hasChanges } }
 
-		stage("Build and Deploy") {
-			when { expression { return hasChanges } }
+          steps {
+             script {
+                // Trivy 캐시를 위한 볼륨 설정
+                def volumes = [
+                   nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}",
+                      serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+                ]
 
-			steps {
-				script {
-					def volumes = [
-						nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}",
-							serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-					]
+                // 특정 서비스 그룹인 경우 Gradle 캐시를 위한 볼륨 추가
+                if (libs.envVars.SERVICE_GROUP in [libs.envVars.SERVICE_GROUP_SC, libs.envVars.SERVICE_GROUP_SUBRIDE]) {
+                   volumes.add(
+                      nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}",
+                         serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+                   )
+                }
 
-					if (libs.envVars.SERVICE_GROUP in [libs.envVars.SERVICE_GROUP_SC, libs.envVars.SERVICE_GROUP_SUBRIDE]) {
-						volumes.add(
-							nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}",
-								serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
-						)
-					}
+                // 필요한 도구들을 포함한 Pod 템플릿 설정
+                podTemplate(label: "${libs.envVars.PIPELINE_ID}",
+                   containers: [
+                      containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+                      containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+                      containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+                      containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+                      containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+                   ],
+                   volumes: volumes
+                ) {
+                   // 파이프라인 ID로 지정된 노드에서 실행
+                   node("${libs.envVars.PIPELINE_ID}") {
+                      // 파이프라인 시작 알림
+                      libs.notifySlack("STARTED", "#FFFF00")
 
-					podTemplate(label: "${libs.envVars.PIPELINE_ID}",
-						containers: [
-							containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-							containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-							containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-							containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-						],
-						volumes: volumes
-					) {
-						node("${libs.envVars.PIPELINE_ID}") {
-							libs.notifySlack("STARTED", "#FFFF00")
+                      // 소스 코드 체크아웃
+                      stage("Get Source") { checkout scm }
 
-							stage("Get Source") { checkout scm }
-							libs.setCICDVariables()
+                      // CI/CD 변수 설정
+                      libs.setCICDVariables()
 
-							def skipStages = "sonar, trivy"
+                      // 건너뛸 stage 설정
+                      def skipStages = "sonar, trivy"
 
-							try {
-								stage("Build Jar") { libs.buildJar() }
+                      try {
+                         // Jar 파일 빌드
+                         stage("Build Jar") { libs.buildJar() }
 
-								if(!skipStages.contains("sonar")) {
-									stage("SonarQube Analysis") { libs.sonarQubeAnalysisForJava() }
-									stage("Verify Quality Gate") { libs.verifyQualityGate() }
-								}
+                         // SonarQube 분석 및 품질 게이트 확인 (skipStages에 포함되지 않은 경우에만 실행)
+                         if(!skipStages.contains("sonar")) {
+                            stage("SonarQube Analysis") { libs.sonarQubeAnalysisForJava() }
+                            stage("Verify Quality Gate") { libs.verifyQualityGate() }
+                         }
 
-								stage("Build Container Image") { libs.buildContainerImageForJava() }
+                         // 컨테이너 이미지 빌드
+                         stage("Build Container Image") { libs.buildContainerImageForJava() }
 
-								if(!skipStages.contains("trivy")) {
-									stage("Scan Image Vulnerability") { libs.scanContainerImageVulnerability() }
-								}
+                         // 이미지 취약점 스캔 (skipStages에 포함되지 않은 경우에만 실행)
+                         if(!skipStages.contains("trivy")) {
+                            stage("Scan Image Vulnerability") { libs.scanContainerImageVulnerability() }
+                         }
 
-								stage("Push Container Image") { libs.pushContainerImage() }
-								stage("Generate Manifest") { libs.generateManifest() }
-								//stage("Deploy") { libs.deploy() }
+                         // 컨테이너 이미지 푸시
+                         stage("Push Container Image") { libs.pushContainerImage() }
 
-								libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-								echo "**** FINISH ALL STAGES : SUCCESS"
-							} catch(e) {
-								currentBuild.result = "FAILED"
-								libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
-								throw e
-							}
-						} // End node
-					} //End podTemplate
-				} //End scripts
-			} // End steps
-		} // End stage("Build and Deploy")
+                         // 매니페스트 파일 생성
+                         stage("Generate Manifest") { libs.generateManifest() }
 
-        //-- When No changes
+                         // 배포 (현재는 주석 처리됨)
+                         //stage("Deploy") { libs.deploy() }
+
+                         // 파이프라인 성공 알림
+                         libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+                         echo "**** FINISH ALL STAGES : SUCCESS"
+                      } catch(e) {
+                         // 파이프라인 실패 처리
+                         currentBuild.result = "FAILED"
+                         libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+                         throw e
+                      }
+                   } // End node
+                } //End podTemplate
+             } //End scripts
+          } // End steps
+       } // End stage("Build and Deploy")
+
+        // 변경 사항이 없는 경우 실행되는 stage
         stage("NoChanges") {
-			when { expression { return !hasChanges } }
+          when { expression { return !hasChanges } }
 
-			steps {
-			    script {
-			        currentBuild.result = 'SUCCESS'
+          steps {
+              script {
+                  currentBuild.result = 'SUCCESS'
                     currentBuild.description = "No pipeline performed because no sources changed"
-			    }
-			}
-		}
+              }
+          }
+       }
 
-	}
+    }
 }
