@@ -10,6 +10,17 @@ libs.setGlobalVariables("sc", "config", "1.0.0")
 //-- 실행환경 준비
 stage("Prepare Environment") {
 	libs.prepareEnvironment()
+
+    stage("Get Source") {
+        checkout scm
+    }
+
+    //---- 소스 변경 여부 검사
+    if (!libs.checkSourceChanges()) {
+        currentBuild.result = 'SUCCESS'
+        currentBuild.description = "소스 변경이 없어 수행하지 않음"
+        return
+    }
 }
 
 //-- Run CI/CD
@@ -36,16 +47,6 @@ stage("Build and Deploy") {
 	)
 	{
 		node("${libs.envVars.PIPELINE_ID}") {
-		    stage("Get Source") {
-				checkout scm
-			}
-
-			//---- 소스 변경 여부 검사
-			if (!libs.checkSourceChanges()) {
-				currentBuild.result = 'SUCCESS'
-				currentBuild.description = "No changes"
-				return
-			}
 
 			libs.notifySlack("STARTED", "#FFFF00")
 
