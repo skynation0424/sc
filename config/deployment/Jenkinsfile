@@ -22,6 +22,7 @@ pipeline {
 			}
 		}
 
+
 		stage("Build and Deploy") {
 			when { expression { return hasChanges } }
 
