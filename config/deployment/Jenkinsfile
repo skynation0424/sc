@@ -2,19 +2,19 @@
 //-- 주의: 아래 처럼 맨 끝에 '_'를 붙여야 함
 @Library('pipeline_shared_library') _
 echo "***** Library loaded successfully *****"
-//def libs = load "pipelineLibraries.groovy"
+def libs = library('pipeline_shared_library').pipelineLibraries
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
-pipelineLibraries.setGlobalVariables("sc", "config", "1.0.0")
+libs.setGlobalVariables("sc", "config", "1.0.0")
 
 //-- 실행환경 준비
 stage("Prepare Environment") {
-    pipelineLibraries.prepareEnvironment()
+    libs.prepareEnvironment()
 }
 
 //-- Run CI/CD
 stage("Build and Deploy") {
-    pipelineLibraries.setPodTemplates()
+    libs.setPodTemplates()
 
     {
         node("${PIPELINE_ID}") {
@@ -23,50 +23,50 @@ stage("Build and Deploy") {
             }
 
             //---- 소스 변경 여부 검사
-            if (!pipelineLibraries.checkSourceChanges()) return
+            if (!libs.checkSourceChanges()) return
 
-            pipelineLibraries.notifySlack("STARTED", "#FFFF00")
+            libs.notifySlack("STARTED", "#FFFF00")
 
             //-- 실행을 위한 변수 셋팅
-            pipelineLibraries.setCICDVariables()
+            libs.setCICDVariables()
 
             //-- 개발 시 CI/CD를 빠르게 하기 위해 일부 Stage Skip(sona,trivy 지정 가능)
             def skipStages = ""
 
             try {
                 //Build: build jar
-                pipelineLibraries.stageBuildJar()
+                libs.stageBuildJar()
 
                 if(!skipStages.contains("sona")) {
                     //-- Build: 소스품질 검사
-                    pipelineLibraries.stageSonarQubeAnalysisForJava()
+                    libs.stageSonarQubeAnalysisForJava()
 
                     //-- Build: Quality Gate 충족 검사
-                    pipelineLibraries.stageVerifyQualityGate()
+                    libs.stageVerifyQualityGate()
                 }
 
                 //-- Build: Build Container image
-                pipelineLibraries.stageBuildContainerImageForJava()
+                libs.stageBuildContainerImageForJava()
 
                 //-- Build: image 보안 취약성 점검
                 if(!skipStages.contains("trivy")) {
-                    pipelineLibraries.stageScanContainerImageVulnurability()
+                    libs.stageScanContainerImageVulnurability()
                 }
 
                 //-- Release:  Push Container image
-                pipelineLibraries.stagePushContainerImage()
+                libs.stagePushContainerImage()
 
                 //-- Deploy: 배포 manifest 파일 생성
-                pipelineLibraries.stageGenerateManifest()
+                libs.stageGenerateManifest()
 
                 //-- Deploy: 배포
-                pipelineLibraries.stageDeploy()
+                libs.stageDeploy()
 
-                pipelineLibraries.notifySlack("${currentBuild.currentResult}", "#00FF00")
+                libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
                 echo "**** FINISH ALL STAGES : SUCCESS"
             } catch(e) {
                 currentBuild.result = "FAILED"
-                pipelineLibraries.notifySlack("${currentBuild.currentResult}", "#FF0000")
+                libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
             }
         }
     }
