@@ -109,16 +109,17 @@ pipeline {
        } // End stage("Build and Deploy")
 
         // 변경 사항이 없는 경우 실행되는 stage
-        stage("NoChanges") {
-          when { expression { return !hasChanges } }
+        stage("Skip pipeline") {
+            when { expression { return !hasChanges } }
 
-          steps {
-              script {
-                  currentBuild.result = 'SUCCESS'
+            steps {
+                script {
+                    currentBuild.result = 'SUCCESS'
                     currentBuild.description = "No pipeline performed because no sources changed"
-              }
-          }
-       }
-
+                }
+                // 실행 가능한 step 추가
+                echo "No changes detected. Skipping the pipeline."
+            }
+        }
     }
 }
