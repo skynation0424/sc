@@ -14,16 +14,26 @@ pipeline {
 
        // 환경 준비 stage
        stage("Prepare Environment") {
-          steps {
+            options {
+                skipDefaultCheckout(true)
+                timeout(time: 1, unit: 'SECONDS')
+            }
+
+            steps {
              script {
                 hasChanges = libs.prepareEnvironment()
              }
-          }
+            }
        }
 
        // 빌드 및 배포 stage
        stage("Build and Deploy") {
           when { expression { return hasChanges } }
+
+        options {
+            skipDefaultCheckout(true)
+            timeout(time: 1, unit: 'SECONDS')
+        }
 
           steps {
              script {
