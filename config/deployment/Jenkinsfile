@@ -11,7 +11,6 @@ pipeline {
 		// 빌드 시작 전 대기 시간을 0으로 설정
 		quietPeriod(0)
 	}
-
 	stages {
 		stage("Set global variables") {
 			steps {
