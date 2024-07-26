@@ -1,7 +1,7 @@
 //-- load library: system설정의 Global Trusted Libraries에 Library 등록
 //-- 주의: 아래 처럼 맨 끝에 '_'를 붙여야 함
 @Library('pipeline_shared_library')
-echo "***** Library loaded successfully *****"
+//echo "***** Library loaded successfully *****"
 //def libs = library('pipeline_shared_library').pipelineLibraries
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
