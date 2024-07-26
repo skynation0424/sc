@@ -17,6 +17,12 @@ pipeline {
           steps {
              script {
                 hasChanges = libs.prepareEnvironment()
+                if (!hasChanges) {
+                    currentBuild.result = 'SUCCESS'
+                    currentBuild.description = "No pipeline performed because no sources changed"
+                    echo "No changes detected. Skipping the pipeline."
+                    return  // 파이프라인 종료
+                }
              }
           }
        }
@@ -107,20 +113,6 @@ pipeline {
              } //End scripts
           } // End steps
        } // End stage("Build and Deploy")
-
-        // 변경 사항이 없는 경우 실행되는 stage
-        stage("Skip pipeline") {
-            when { expression { return !hasChanges } }
-
-            steps {
-                script {
-                    currentBuild.result = 'SUCCESS'
-                    currentBuild.description = "No pipeline performed because no sources changed"
-                }
-                // 실행 가능한 step 추가
-                echo "No changes detected. Skipping the pipeline."
-            }
-        }
     }
 }
 
