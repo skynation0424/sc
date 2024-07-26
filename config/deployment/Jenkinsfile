@@ -15,19 +15,26 @@ stage("Prepare Environment") {
 //-- Run CI/CD
 stage("Build and Deploy") {
     //libs.setPodTemplates()
+    def volumes = [
+       nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+    ]
+
+    if (libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SC || libs.envVars.SERVICE_GROUP == libs.envVars.SERVICE_GROUP_SUBRIDE) {
+       volumes.add(
+           nfsVolume(mountPath: "/home/gradle/.gradle", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.GRADLE_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
+       )
+    }
+
     podTemplate(
-        label: "${PIPELINE_ID}",
-        containers: [
-            containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
-            containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
-            containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
-            containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
-            containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
-        ],
-        volumes: [
-            nfsVolume( mountPath: "/home/gradle/.gradle", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${GRADLE_CACHE_DIR}/${SRC_DIR}", readOnly: false ),
-            nfsVolume(mountPath: "/${TRIVY_CACHE_DIR}", serverAddress: "${NFS_HOST}", serverPath: "/${NFS_DIR}/${TRIVY_CACHE_DIR}/${SRC_DIR}", readOnly: false)
-        ]
+       label: "${libs.envVars.PIPELINE_ID}",
+       containers: [
+           containerTemplate(name: "trivy", image: "aquasec/trivy", ttyEnabled: true, command: "cat"),
+           containerTemplate(name: "kubectl", image: "lachlanevenson/k8s-kubectl", command: "cat", ttyEnabled: true),
+           containerTemplate(name: "gradle", image: "gradle:jdk17", ttyEnabled: true, command: "cat"),
+           containerTemplate(name: 'podman', image: "mgoltzsche/podman", ttyEnabled: true, command: 'cat', privileged: true),
+           containerTemplate(name: 'envsubst', image: "hiondal/envsubst", command: 'sleep', args: '1h')
+       ],
+       volumes: volumes
     )
     {
         node("${PIPELINE_ID}") {
