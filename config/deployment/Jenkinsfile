@@ -41,7 +41,11 @@ stage("Build and Deploy") {
             }
 
             //---- 소스 변경 여부 검사
-            if (!libs.checkSourceChanges()) return
+            if (!libs.checkSourceChanges()) {
+                echo "No changes in <${SRC_DIR}> directory. Skipping pipeline."
+                currentBuild.result = 'SUCCESS'
+                return
+            }
 
             libs.notifySlack("STARTED", "#FFFF00")
 
