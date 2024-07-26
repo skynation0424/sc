@@ -62,49 +62,119 @@ pipeline {
                             libs.notifySlack("STARTED", "#FFFF00")
 
                             // 소스 코드 체크아웃
-                            stage("Get Source") { checkout scm }
+                            stage("Get Source") {
+                                steps {
+                                    checkout scm
+                                }
+                            }
 
                             // CI/CD 변수 설정
-                            libs.setCICDVariables()
+                            stage("Set CICD Variables") {
+                                steps {
+                                    script {
+                                        libs.setCICDVariables()
+                                    }
+                                }
+                            }
 
                             // 건너뛸 stage 설정
                             def skipStages = "sonar, trivy"
 
                             try {
                                 // Jar 파일 빌드
-                                stage("Build Jar") { libs.buildJar() }
+                                stage("Build Jar") {
+                                    steps {
+                                        script {
+                                            libs.buildJar()
+                                        }
+                                    }
+                                }
 
                                 // SonarQube 분석 및 품질 게이트 확인 (skipStages에 포함되지 않은 경우에만 실행)
                                 if(!skipStages.contains("sonar")) {
-                                    stage("SonarQube Analysis") { libs.sonarQubeAnalysisForJava() }
-                                    stage("Verify Quality Gate") { libs.verifyQualityGate() }
+                                    stage("SonarQube Analysis") {
+                                        steps {
+                                            script {
+                                                libs.sonarQubeAnalysisForJava()
+                                            }
+                                        }
+                                    }
+                                    stage("Verify Quality Gate") {
+                                        steps {
+                                            script {
+                                                libs.verifyQualityGate()
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // 컨테이너 이미지 빌드
-                                stage("Build Container Image") { libs.buildContainerImageForJava() }
+                                stage("Build Container Image") {
+                                    steps {
+                                        script {
+                                            libs.buildContainerImageForJava()
+                                        }
+                                    }
+                                }
 
                                 // 이미지 취약점 스캔 (skipStages에 포함되지 않은 경우에만 실행)
                                 if(!skipStages.contains("trivy")) {
-                                    stage("Scan Image Vulnerability") { libs.scanContainerImageVulnerability() }
+                                    stage("Scan Image Vulnerability") {
+                                        steps {
+                                            script {
+                                                libs.scanContainerImageVulnerability()
+                                            }
+                                        }
+                                    }
                                 }
 
                                 // 컨테이너 이미지 푸시
-                                stage("Push Container Image") { libs.pushContainerImage() }
+                                stage("Push Container Image") {
+                                    steps {
+                                        script {
+                                            libs.pushContainerImage()
+                                        }
+                                    }
+                                }
 
                                 // 매니페스트 파일 생성
-                                stage("Generate Manifest") { libs.generateManifest() }
+                                stage("Generate Manifest") {
+                                    steps {
+                                        script {
+                                            libs.generateManifest()
+                                        }
+                                    }
+                                }
 
                                 // 배포 (현재는 주석 처리됨)
-                                //stage("Deploy") { libs.deploy() }
+                                //stage("Deploy") {
+                                //    steps {
+                                //        script {
+                                //            libs.deploy()
+                                //        }
+                                //    }
+                                //}
 
                                 // 파이프라인 성공 알림
-                                libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-                                echo "**** FINISH ALL STAGES : SUCCESS"
+                                stage("Notify Success") {
+                                    steps {
+                                        script {
+                                            libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+                                            echo "**** FINISH ALL STAGES : SUCCESS"
+                                        }
+                                    }
+                                }
                             } catch(e) {
                                 // 파이프라인 실패 처리
-                                currentBuild.result = "FAILED"
-                                libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
-                                throw e
+                                stage("Handle Failure") {
+                                    steps {
+                                        script {
+                                            currentBuild.result = "FAILED"
+                                            libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+                                            throw e
+                                        }
+                                    }
+                                }
                             }
                         } // End node
                     } // End podTemplate
