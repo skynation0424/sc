@@ -85,7 +85,7 @@ stage("Build and Deploy") {
                     }
                 }
 
-                //-- Release:  Push Container image
+                //-- Release: Push Container image
                 stage("Push Container Image") {
                     libs.pushContainerImage()
                 }
