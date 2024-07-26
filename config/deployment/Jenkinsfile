@@ -50,6 +50,10 @@ stage("Build and Deploy") {
 
 			libs.notifySlack("STARTED", "#FFFF00")
 
+            stage("Get Source") {
+                checkout scm
+            }
+
 			//-- 실행을 위한 변수 셋팅
 			libs.setCICDVariables()
 
