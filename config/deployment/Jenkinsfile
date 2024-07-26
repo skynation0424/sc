@@ -53,44 +53,70 @@ pipeline {
 							) {
 								node("${libs.envVars.PIPELINE_ID}") {
 									libs.notifySlack("STARTED", "#FFFF00")
-
-									stage("Get Source") { checkout scm }
+									checkout scm
 									libs.setCICDVariables()
-
 									def skipStages = "sonar, trivy"
-
-									stage("Build Jar") {
-										steps { script { libs.buildJar() } }
-									}
-
-									stage("SonarQube Analysis") {
-										when { expression { return !"sonar".toUpperCase() in skipStages } }
-										steps { script { libs.sonarQubeAnalysisForJava() } }
-									}
-
-									stage("Verify Quality Gate") {
-										when { expression { return !"sonar".toUpperCase() in skipStages } }
-										steps { script { libs.verifyQualityGate() } }
-									}
-
-									stage("Build Container Image") {
-										steps { script { libs.buildContainerImageForJava() } }
-									}
-
-									stage("Scan Image Vulnerability") {
-										when { expression { return !"trivy".toUpperCase() in skipStages } }
-										steps { script { libs.scanContainerImageVulnerability() } }
-									}
-
-									stage("Push Container Image") {
-										steps { script { libs.pushContainerImage() } }
-									}
-
-									stage("Generate Manifest") {
-										steps { script { libs.generateManifest() } }
-									}
 								}
 							}
+						}
+					}
+				}
+
+				stage("Build Jar") {
+					steps {
+						script {
+							libs.buildJar()
+						}
+					}
+				}
+
+				stage("SonarQube Analysis") {
+					when { expression { return !"sonar".toUpperCase() in skipStages } }
+					steps {
+						script {
+							libs.sonarQubeAnalysisForJava()
+						}
+					}
+				}
+
+				stage("Verify Quality Gate") {
+					when { expression { return !"sonar".toUpperCase() in skipStages } }
+					steps {
+						script {
+							libs.verifyQualityGate()
+						}
+					}
+				}
+
+				stage("Build Container Image") {
+					steps {
+						script {
+							libs.buildContainerImageForJava()
+						}
+					}
+				}
+
+				stage("Scan Image Vulnerability") {
+					when { expression { return !"trivy".toUpperCase() in skipStages } }
+					steps {
+						script {
+							libs.scanContainerImageVulnerability()
+						}
+					}
+				}
+
+				stage("Push Container Image") {
+					steps {
+						script {
+							libs.pushContainerImage()
+						}
+					}
+				}
+
+				stage("Generate Manifest") {
+					steps {
+						script {
+							libs.generateManifest()
 						}
 					}
 				}
