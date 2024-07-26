@@ -2,9 +2,10 @@
 //-- 주의: 아래 처럼 맨 끝에 '_'를 붙여야 함
 @Library('pipeline_shared_library') _
 echo "***** Library loaded successfully *****"
+def common = new commonFunctions()
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
-setGlobalVariables("sc", "config", "1.0.0")
+common.setGlobalVariables("sc", "config", "1.0.0")
 
 //-- 실행환경 준비
 stage("Prepare Environment") {
