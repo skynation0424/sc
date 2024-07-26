@@ -1,10 +1,14 @@
+//-- load library: system설정의 Global Trusted Libraries에 Library 등록
+//-- 주의: 아래 처럼 맨 끝에 '_'를 붙여야 함
 @Library('pipeline_shared_library') _
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
 setGlobalVarialbes("sc", "config", "1.0.0")
 
 //-- 실행환경 준비
-prepareEnvironment()
+stage("Prepare Environment") {
+    prepareEnvironment()
+}
 
 //-- Run CI/CD
 stage("Build and Deploy") {
