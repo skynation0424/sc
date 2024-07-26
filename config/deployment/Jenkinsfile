@@ -9,7 +9,11 @@ libs.setGlobalVariables("sc", "config", "1.0.0")
 
 //-- 실행환경 준비
 stage("Prepare Environment") {
-	libs.prepareEnvironment()
+    def hasChanges = libs.prepareEnvironment()
+    if (!hasChanges) {
+        currentBuild.result = 'SUCCESS'
+        return
+    }
 }
 
 //-- Run CI/CD
