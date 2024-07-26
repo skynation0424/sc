@@ -5,8 +5,13 @@ echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
-def props = script.readProperties file:"${env.DEPLOYMENT_DIR}/jenkins_env_vars"
-libs.setGlobalVariables(props["serviceGroup"], props["serviceId"], props["version"])
+def propsFile = "${env.DEPLOYMENT_DIR}/jenkins_env_vars"
+if (fileExists(propsFile)) {
+    def props = readProperties file: propsFile
+    libs.setGlobalVariables(props.serviceGroup, props.serviceId, props.version)
+} else {
+    error "Properties file not found: ${propsFile}"
+}
 
 //-- 실행환경 준비
 def hasChanges = true
