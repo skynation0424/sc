@@ -60,7 +60,7 @@ metadata:
   namespace: ${namespace}
 type: Opaque
 stringData:
-  GIT_TOKEN: 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
+  GIT_TOKEN: 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
   ENCRYPT_KEY: CL4cboqlIweOqt93wjzZi/qjCxcSOYAMgzdKiy6cG2Y=
 
 ---

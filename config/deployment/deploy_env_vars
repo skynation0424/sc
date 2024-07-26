@@ -4,12 +4,12 @@ namespace=ondal
 replicas=1
 server_port=9001
 container_port=18080
-resources_requests_cpu=500m
-resources_requests_memory=512Mi
+resources_requests_cpu=256m
+resources_requests_memory=256Mi
 resources_limits_cpu=500m
 resources_limits_memory=1024Mi
 service_type=ClusterIP
-ingress_host=config.165.192.76.211.nip.io
+ingress_host=config.43.200.12.214.nip.io
 
 #-- Jenkins pipeline관련
 artifactory_file=config.jar
