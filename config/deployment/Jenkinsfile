@@ -2,7 +2,7 @@
 //-- 주의: 아래 처럼 맨 끝에 '_'를 붙여야 함
 @Library('pipeline_shared_library') _
 echo "***** Library loaded successfully *****"
-def libs = pipelineLibraries
+def libs = load "pipelineLibraries.groovy"
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
 libs.setGlobalVariables("sc", "config", "1.0.0")
