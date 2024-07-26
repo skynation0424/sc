@@ -17,6 +17,7 @@ stage("Prepare Environment") {
     }
 }
 
+
 //-- Run CI/CD
 stage("Build and Deploy") {
 	//libs.setPodTemplates()
