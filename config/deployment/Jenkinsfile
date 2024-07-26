@@ -5,7 +5,8 @@ echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
-libs.setGlobalVariables("sc", "config", "1.0.1")
+def props = script.readProperties file:"${env.DEPLOYMENT_DIR}/jenkins_env_vars"
+libs.setGlobalVariables(props["serviceGroup"], props["serviceId"], props["version"])
 
 //-- 실행환경 준비
 def hasChanges = true
@@ -15,13 +16,12 @@ stage("Prepare Environment") {
 
 if (!hasChanges) {
     currentBuild.result = 'SUCCESS'
-    currentBuild.description = "변경된 소스가 없어 파이프라인 수행 안함"
+    currentBuild.description = "No pipeline performed because no sources changed"
     return
 }
 
 //-- Run CI/CD
 stage("Build and Deploy") {
-	//libs.setPodTemplates()
 	def volumes = [
 		nfsVolume(mountPath: "/${libs.envVars.TRIVY_CACHE_DIR}", serverAddress: "${libs.envVars.NFS_HOST}", serverPath: "/${libs.envVars.NFS_DIR}/${libs.envVars.TRIVY_CACHE_DIR}/${libs.envVars.SRC_DIR}", readOnly: false)
 	]
