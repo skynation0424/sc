@@ -87,6 +87,7 @@ stage("Build and Deploy") {
 
                 //-- Release: Push Container image
                 stage("Push Container Image") {
+                    echo "** push container image!!"
                     libs.pushContainerImage()
                 }
 
