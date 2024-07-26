@@ -7,7 +7,7 @@ def libs = pipelineLibraries(this)
 parameters {
     string(name: 'SERVICE_GROUP', defaultValue: 'sc'),
     string(name: 'SERVICE_ID', defaultValue: 'config'),
-    string(name: 'SERVICE_VERSION', defaultValue: '1.0.1'),
+    string(name: 'SERVICE_VERSION', defaultValue: '1.0.1')
 }
 
 //-- 전역변수 설정
