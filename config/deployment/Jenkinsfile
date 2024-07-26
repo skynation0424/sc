@@ -4,6 +4,10 @@
 echo "***** Library loaded successfully *****"
 def libs = pipelineLibraries(this)
 
+parameters {
+    string(name: 'DEPLOYMENT_DIR', defaultValue: 'config/deployment')
+}
+
 node {
     //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
     def propsFile = "${env.DEPLOYMENT_DIR}/jenkins_env_vars"
