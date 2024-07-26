@@ -5,7 +5,6 @@ def hasChanges = false
 pipeline {
     agent any
     options { quietPeriod(0) }
-
     stages {
        // 전역 변수 설정 stage
        stage("Set global variables") {
