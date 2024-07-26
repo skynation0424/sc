@@ -8,13 +8,15 @@ def libs = pipelineLibraries(this)
 libs.setGlobalVariables("sc", "config", "1.0.1")
 
 //-- 실행환경 준비
+def hasChanges = true
 stage("Prepare Environment") {
-    def hasChanges = libs.prepareEnvironment()
-    if (!hasChanges) {
-        currentBuild.result = 'SUCCESS'
-        currentBuild.description = "No changes. Stop pipeline."
-        return
-    }
+    hasChanges = libs.prepareEnvironment()
+}
+
+if (!hasChanges) {
+    currentBuild.result = 'SUCCESS'
+    currentBuild.description = "No changes. Stop pipeline."
+    return
 }
 
 //-- Run CI/CD
