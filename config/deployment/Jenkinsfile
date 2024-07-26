@@ -28,7 +28,8 @@ pipeline {
 					if (!hasChanges) {
 						currentBuild.result = 'SUCCESS'
 						currentBuild.description = "No pipeline performed because no sources changed"
-						error("No changes detected. Stopping the pipeline.")
+						//error("No changes detected. Stopping the pipeline.")
+						return
 					}
 				}
 			}
