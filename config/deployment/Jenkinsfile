@@ -22,7 +22,6 @@ pipeline {
 			}
 		}
 
-
 		stage("Build and Deploy") {
 			when { expression { return hasChanges } }
 
@@ -99,11 +98,19 @@ pipeline {
 
 			post {
 				success {
-					libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
-					echo "**** FINISH ALL STAGES : SUCCESS"
+					steps {
+						script {
+							libs.notifySlack("${currentBuild.currentResult}", "#00FF00")
+							echo "**** FINISH ALL STAGES : SUCCESS"
+						}
+					}
 				}
 				failure {
-					libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+					steps {
+						script {
+							libs.notifySlack("${currentBuild.currentResult}", "#FF0000")
+						}
+					}
 				}
 			}
 		}
