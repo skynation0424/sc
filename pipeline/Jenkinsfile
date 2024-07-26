@@ -17,7 +17,6 @@ pipeline {
           steps {
              script {
                 hasChanges = libs.prepareEnvironment()
-
              }
           }
        }
@@ -122,7 +121,6 @@ pipeline {
              echo "No changes detected. Skipping the pipeline."
          }
       }
-
     }
 }
 
