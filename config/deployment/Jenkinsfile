@@ -1,4 +1,4 @@
-@Library('pipeline_shared_library')
+@Library('pipeline_shared_library') _
 
 //--전역변수 셋팅: 서비스그룹, 서비스ID, 버전
 setGlobalVarialbes("sc", "config", "1.0.0")
