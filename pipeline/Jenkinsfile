@@ -29,10 +29,7 @@ pipeline {
 
 		// 빌드 및 배포 stage
 		stage("Build and Deploy") {
-			when { expression {
-			    echo "Changes!"
-			    return hasChanges
-			} }
+			when { expression { return hasChanges } }
 
 			steps {
 				script {
@@ -120,15 +117,16 @@ pipeline {
 		} // End stage("Build and Deploy")
 
 		// 변경 사항이 없는 경우 실행되는 stage
-		stage("No Changes") {
-			when { expression { return !hasChanges } }
-
+		stage("Finalize") {
 			steps {
 				script {
-					currentBuild.result = 'SUCCESS'
-					currentBuild.description = "No pipeline performed because no sources changed"
-					libs.notifySlack("SKIPPED", "#A9A9A9")
-					echo "No changes detected. Skipping the pipeline."
+				    if (!hasChanges) {
+				        currentBuild.result = 'SUCCESS'
+                    	currentBuild.description = "No pipeline performed because no sources changed"
+                    	libs.notifySlack("SKIPPED", "#A9A9A9")
+                    	echo "No changes detected. Skipping the pipeline."
+				    }
+				    echo "Finish All processed !!!"
 				}
 			}
 		}
