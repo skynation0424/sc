@@ -29,7 +29,10 @@ pipeline {
 
 		// 빌드 및 배포 stage
 		stage("Build and Deploy") {
-			when { expression { return hasChanges } }
+			when { expression {
+			    echo "Changes!"
+			    return hasChanges
+			} }
 
 			steps {
 				script {
