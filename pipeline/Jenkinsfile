@@ -18,8 +18,7 @@ pipeline {
         stage("Set Global variables") {
             steps {
                 script {
-                    libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID,
-                        params.SERVICE_VERSION, params.SKIP_STAGES)
+                    libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION, params.SKIP_STAGES)
                 }
             }
         }
