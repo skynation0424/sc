@@ -1,3 +1,6 @@
+#!groovy
+// -*- coding: utf-8 -*-
+
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 def hasChanges = false
@@ -7,7 +10,7 @@ pipeline {
     options { quietPeriod(0) }
 
     parameters {
-        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: 'Service Grooup:sc,subride,subride-front')
+        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 Grooup:sc,subride,subride-front')
         string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID')
         string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: 'Service Version')
         string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP/Host')
