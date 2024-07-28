@@ -3,32 +3,33 @@
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 def hasChanges = false
-pipeline {
-	agent any
-	options { quietPeriod(0) }
-	parameters {
-		string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 Grooup:sc,subride,subride-front')
-		string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID')
-		string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: 'Service Version')
-		string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP/Host')
-		string(name: 'IMAGE_REG_HOST', defaultValue: 'docker.io', description: 'Img Reg Host')
-		string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: 'Img Reg Credential')
-		string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: 'Img Reg Organization')
-		string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
-	}
 
-	script {
-		// 전역 변수 설정
-		libs.setGlobalVariables()
-		hasChanges = libs.prepareEnvironment()
+properties([
+    parameters([
+        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 Grooup:sc,subride,subride-front'),
+        string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID'),
+        string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: 'Service Version'),
+        string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP/Host'),
+        string(name: 'IMAGE_REG_HOST', defaultValue: 'docker.io', description: 'Img Reg Host'),
+        string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: 'Img Reg Credential'),
+        string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: 'Img Reg Organization'),
+        string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
+    ]),
+    quietPeriod(0)
+])
 
-		// 빌드 및 배포
-		if (hasChanges) {
-			libs.buildAndDeploy()
-		} else {
-			currentBuild.result = 'SUCCESS'
-			currentBuild.description = "No pipeline performed because no sources changed"
-		}
-		echo "Finish All processed !!!"
-	}
+node {
+    // 전역 변수 설정
+    libs.setGlobalVariables()
+    hasChanges = libs.prepareEnvironment()
+
+    if (hasChanges) {
+        // 빌드 및 배포
+        libs.buildAndDeploy()
+    } else {
+        currentBuild.result = 'SUCCESS'
+        currentBuild.description = "No pipeline performed because no sources changed"
+    }
+
+    echo "Finish All processed !!!"
 }
