@@ -1,4 +1,11 @@
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 
-libs.buildPipeline(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION)
+pipeline {
+    agent any
+    options { quietPeriod(0) }
+
+    stages {
+        libs.buildPipeline(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION)
+    }
+}
