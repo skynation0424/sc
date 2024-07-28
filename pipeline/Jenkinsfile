@@ -18,9 +18,14 @@ properties([
 node {
     // 전역 변수 설정
     libs.setGlobalVariables()
-    hasChanges = libs.prepareEnvironment()
+
+    //소스 변경 여부 검사
+    hasChanges = libs.checkSourceChanges()
 
     if (hasChanges) {
+        //캐시 디렉토리 생성: gradle library, Trivy image 보안 취약성 기준
+        libs.createCacheDirectory()
+
         // 빌드 및 배포
         libs.buildAndDeploy()
     } else {
