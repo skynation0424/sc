@@ -20,34 +20,19 @@ pipeline {
         string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
     }
 
-    stages {
-        // 전역 변수 설정 stage
-        stage("Preparation") {
-            steps {
-                script {
-                    libs.setGlobalVariables()
+    script {
+        libs.setGlobalVariables()
 
-                    hasChanges = libs.prepareEnvironment()
-                }
-            }
+        hasChanges = libs.prepareEnvironment()
+
+        if (hasChanges) {
+            libs.buildAndDeploy()
+        } else {
+            currentBuild.result = 'SUCCESS'
+            currentBuild.description = "No pipeline performed because no sources changed"
         }
 
-        // 빌드 및 배포 stage
-        stage("Build and Deploy") {
-            steps {
-                script {
-                    if (hasChanges) {
-                        libs.buildAndDeploy()
-                    } else {
-                        currentBuild.result = 'SUCCESS'
-                        currentBuild.description = "No pipeline performed because no sources changed"
-                    }
-
-                    echo "Finish All processed !!!"
-                }
-
-            }
-        }
+        echo "Finish All processed !!!"
     }
 }
 
