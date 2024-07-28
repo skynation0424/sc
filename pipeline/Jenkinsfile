@@ -1,7 +1,7 @@
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 def hasChanges = false
-
+/*
 properties([
     parameters([
         string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 그룹(sc,subride,subride-front)'),
@@ -14,6 +14,7 @@ properties([
         string(name: 'SKIP_STAGES', defaultValue: '', description: '건너 뛸 단계명(sonar,trivy)')
     ])
 ])
+*/
 
 node {
     // 전역 변수 설정
