@@ -18,3 +18,4 @@ dependencies {
 bootJar {
     archiveFileName = "scg.jar"
 }
+
