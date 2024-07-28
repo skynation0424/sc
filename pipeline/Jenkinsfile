@@ -10,24 +10,24 @@ pipeline {
 
         stage("Set Global variables") {
             steps {
-                libs.setGlobalVariables(serviceGroup, serviceId, version)
+                script { libs.setGlobalVariables(serviceGroup, serviceId, version) }
             }
         }
 
         stage("Prepare Environment") {
             steps {
-                hasChanges = libs.prepareEnvironment()
+                script { hasChanges = libs.prepareEnvironment() }
                 echo "End of Prepare Environment"
             }
         }
 
         stage("Build and Deploy") {
             when { expression { return hasChanges } }
-            libs.buildAndDeploy()
+            script { libs.buildAndDeploy() }
         }
 
         stage("Finalize") {
-            libs.finilizePipeline()
+            script { libs.finilizePipeline() }
         }
     }
 }
