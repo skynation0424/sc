@@ -14,8 +14,7 @@ properties([
         string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: 'Img Reg Credential'),
         string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: 'Img Reg Organization'),
         string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
-    ]),
-    quietPeriod(0)
+    ])
 ])
 
 node {
