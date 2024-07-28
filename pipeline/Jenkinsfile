@@ -6,14 +6,14 @@ def hasChanges = false
 
 properties([
     parameters([
-        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 Grooup:sc,subride,subride-front'),
-        string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID'),
-        string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: 'Service Version'),
-        string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP/Host'),
-        string(name: 'IMAGE_REG_HOST', defaultValue: 'docker.io', description: 'Img Reg Host'),
-        string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: 'Img Reg Credential'),
-        string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: 'Img Reg Organization'),
-        string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
+        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: '서비스 그룹(sc,subride,subride-front)'),
+        string(name: 'SERVICE_ID', defaultValue: 'config', description: '서비스 ID(프로젝트명과 동일)'),
+        string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: '서비스 버전(예:1.0.0)'),
+        string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP 또는 Host'),
+        string(name: 'IMAGE_REG_HOST', defaultValue: 'docker.io', description: '이미지저장소 Host'),
+        string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: '이미지저장소 Credential'),
+        string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: '이미지저장소 Organization'),
+        string(name: 'SKIP_STAGES', defaultValue: '', description: '건너 뛸 단계명(sonar,trivy)')
     ])
 ])
 
@@ -27,8 +27,6 @@ node {
         libs.buildAndDeploy()
     } else {
         currentBuild.result = 'SUCCESS'
-        currentBuild.description = "No pipeline performed because no sources changed"
+        currentBuild.description = "변경된 소스가 없어 파이프라인 실행 안함"
     }
-
-    echo "Finish All processed !!!"
 }
