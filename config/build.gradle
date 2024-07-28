@@ -4,4 +4,3 @@ dependencies {
 bootJar {
     archiveFileName = "config.jar"
 }
-
