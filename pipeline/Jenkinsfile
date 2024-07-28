@@ -10,15 +10,21 @@ pipeline {
         string(name: 'SERVICE_GROUP', defaultValue: '', description: 'Service Grooup:sc,subride,subride-front')
         string(name: 'SERVICE_ID', defaultValue: '', description: 'Service ID')
         string(name: 'SERVICE_VERSION', defaultValue: '', description: 'Service Version')
+        string(name: 'NFS_HOST', defaultValue: '', description: 'NFS 서버')
         string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
     }
-
+    /*
+            envVars.NFS_HOST = "43.200.12.214"
+            envVars.IMAGE_REG_CREDENTIAL = "credential_dockerhub_ondal"
+            envVars.IMAGE_REG_HOST = "docker.io"
+            envVars.IMAGE_REG_ORG = "hiondal"
+    */
     stages {
         // 전역 변수 설정 stage
         stage("Set Global variables") {
             steps {
                 script {
-                    libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION, params.SKIP_STAGES)
+                    libs.setGlobalVariables()
                 }
             }
         }
