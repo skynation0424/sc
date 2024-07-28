@@ -22,18 +22,11 @@ pipeline {
 
     stages {
         // 전역 변수 설정 stage
-        stage("Set Global variables") {
+        stage("Preparation") {
             steps {
                 script {
                     libs.setGlobalVariables()
-                }
-            }
-        }
 
-        // 환경 준비 stage
-        stage("Prepare Environment") {
-            steps {
-                script {
                     hasChanges = libs.prepareEnvironment()
                 }
             }
@@ -41,26 +34,18 @@ pipeline {
 
         // 빌드 및 배포 stage
         stage("Build and Deploy") {
-            when { expression { return hasChanges } }   //소스변경시만 수행
-
             steps {
                 script {
-                    libs.buildAndDeploy()
-                }
-            }
-        }
-
-        // 최종 완료 stage
-        stage("Finalize") {
-            steps {
-                script {
-                    //--소스변경이 없는 경우 성공 처리
-                    if (!hasChanges) {
+                    if (hasChanges) {
+                        libs.buildAndDeploy()
+                    } else {
                         currentBuild.result = 'SUCCESS'
                         currentBuild.description = "No pipeline performed because no sources changed"
                     }
+
                     echo "Finish All processed !!!"
                 }
+
             }
         }
     }
