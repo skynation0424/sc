@@ -7,18 +7,18 @@ pipeline {
     options { quietPeriod(0) }
 
     parameters {
-        string(name: 'SERVICE_GROUP', defaultValue: '', description: 'Service Grooup:sc,subride,subride-front')
-        string(name: 'SERVICE_ID', defaultValue: '', description: 'Service ID')
-        string(name: 'SERVICE_VERSION', defaultValue: '', description: 'Service Version')
-        string(name: 'NFS_HOST', defaultValue: '', description: 'NFS 서버')
+        string(name: 'SERVICE_GROUP', defaultValue: 'sc', description: 'Service Grooup:sc,subride,subride-front')
+        string(name: 'SERVICE_ID', defaultValue: 'config', description: 'Service ID')
+        string(name: 'SERVICE_VERSION', defaultValue: '1.0.0', description: 'Service Version')
+        string(name: 'NFS_HOST', defaultValue: '43.200.12.214', description: 'NFS Server IP/Host')
+
+        string(name: 'IMAGE_REG_HOST', defaultValue: 'docker.io', description: 'Img Reg Host')
+        string(name: 'IMAGE_REG_CREDENTIAL', defaultValue: 'credential_dockerhub_ondal', description: 'Img Reg Credential')
+        string(name: 'IMAGE_REG_ORG', defaultValue: 'hiondal', description: 'Img Reg Organization')
+
         string(name: 'SKIP_STAGES', defaultValue: '', description: 'Stages to skip:sonar,trivy')
     }
-    /*
-            envVars.NFS_HOST = "43.200.12.214"
-            envVars.IMAGE_REG_CREDENTIAL = "credential_dockerhub_ondal"
-            envVars.IMAGE_REG_HOST = "docker.io"
-            envVars.IMAGE_REG_ORG = "hiondal"
-    */
+
     stages {
         // 전역 변수 설정 stage
         stage("Set Global variables") {
