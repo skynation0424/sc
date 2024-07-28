@@ -39,7 +39,7 @@ pipeline {
 		// 변경 사항이 없는 경우 실행되는 stage
 		stage("Finalize") {
 			steps {
-                script { libs.finalizePipeline() }
+                libs.finalizePipeline()
 			}
 		}
 	}
