@@ -1,5 +1,3 @@
-#!groovy
-// -*- coding: utf-8 -*-
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 def hasChanges = false
@@ -30,3 +28,4 @@ node {
         currentBuild.description = "변경된 소스가 없어 파이프라인 실행 안함"
     }
 }
+
