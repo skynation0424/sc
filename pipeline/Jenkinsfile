@@ -6,6 +6,28 @@ pipeline {
     options { quietPeriod(0) }
 
     stages {
-        libs.buildPipeline(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION)
+       def hasChanges = false
+
+        stage("Set Global variables") {
+            steps {
+                libs.setGlobalVariables(serviceGroup, serviceId, version)
+            }
+        }
+
+        stage("Prepare Environment") {
+            steps {
+                hasChanges = libs.prepareEnvironment()
+                echo "End of Prepare Environment"
+            }
+        }
+
+        stage("Build and Deploy") {
+            when { expression { return hasChanges } }
+            libs.buildAndDeploy()
+        }
+
+        stage("Finalize") {
+            libs.finilizePipeline()
+        }
     }
 }
