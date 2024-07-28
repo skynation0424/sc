@@ -3,6 +3,7 @@ def libs = pipelineLibraries(this)
 
 pipeline {
     agent any
+
     options { quietPeriod(0) }
 
     stages {
@@ -15,3 +16,4 @@ pipeline {
         }
     }
 }
+
