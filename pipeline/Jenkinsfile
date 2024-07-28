@@ -1,47 +1,53 @@
 @Library('pipeline_shared_library') _
 def libs = pipelineLibraries(this)
 def hasChanges = false
+
 pipeline {
-	agent any
-	options { quietPeriod(0) }
+    agent any
+    options { quietPeriod(0) }
 
-	stages {
-		// 전역 변수 설정 stage
-		stage("Set Global variables") {
-			steps {
-				script {
-					libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION)
-				}
-			}
-		}
+    stages {
+        // 전역 변수 설정 stage
+        stage("Set Global variables") {
+            steps {
+                script {
+                    libs.setGlobalVariables(params.SERVICE_GROUP, params.SERVICE_ID, params.SERVICE_VERSION)
+                }
+            }
+        }
 
-		// 환경 준비 stage
-		stage("Prepare Environment") {
-			steps {
-				script {
-					hasChanges = libs.prepareEnvironment()
-					echo "End of Prepare Environment"
-				}
-			}
-		}
+        // 환경 준비 stage
+        stage("Prepare Environment") {
+            steps {
+                script {
+                    hasChanges = libs.prepareEnvironment()
+                    echo "End of Prepare Environment"
+                }
+            }
+        }
 
-		// 빌드 및 배포 stage
-		stage("Build and Deploy") {
-			when { expression { return hasChanges } }
+        // 빌드 및 배포 stage
+        stage("Build and Deploy") {
+            when { expression { return hasChanges } }
 
-			steps {
-			    script {
-			        libs.buildAndDeploy()
-			    }
-			} // End steps
-		} // End stage("Build and Deploy")
+            steps {
+                script {
+                    libs.buildAndDeploy()
+                }
+            } // End steps
+        } // End stage("Build and Deploy")
 
-		// 변경 사항이 없는 경우 실행되는 stage
-		stage("Finalize") {
-			steps {
-                libs.finalizePipeline()
-			}
-		}
-	}
+        // 변경 사항이 없는 경우 실행되는 stage
+        stage("Finalize") {
+            steps {
+                script {
+                    if (!hasChanges) {
+                        currentBuild.result = 'SUCCESS'
+                        currentBuild.description = "No pipeline performed because no sources changed"
+                    }
+                    echo "Finish All processed !!!"
+                }
+            }
+        }
+    }
 }
-
