@@ -60,7 +60,7 @@ metadata:
   namespace: ${namespace}
 data:
   SERVER_PORT: "${server_port}"
-  EUREKA_SERVERS: ${eureka_service_url}
+  EUREKA_SERVERS: http://eureka:18080/eureka
   ALLOWED_ORIGINS: ${allowedOrigins}
 
 ---
