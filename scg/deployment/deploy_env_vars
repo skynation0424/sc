@@ -9,8 +9,8 @@ resources_requests_memory=512Mi
 resources_limits_cpu=500m
 resources_limits_memory=1024Mi
 service_type=ClusterIP
-ingress_host=scg.165.192.76.211.nip.io
-allowedOrigins=http://subride-front.165.192.76.211.nip.io
+ingress_host=scg.43.200.12.214.nip.io
+allowedOrigins=http://subride-front.43.200.12.214.nip.io
 
 #-- Jenkins pipeline관련
 artifactory_file=scg.jar
