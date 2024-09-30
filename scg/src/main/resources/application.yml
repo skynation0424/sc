@@ -89,6 +89,8 @@ spring.cloud.gateway:
       uri: lb://subrecommend-service
       predicates:
         - Path=/api/subrecommend/**
+      filters:
+        - RewritePath=/api/subrecommend/(?<segment>.*), /api/${segment}
 
     - id: mysub
       uri: lb://mysub-service
@@ -127,7 +129,7 @@ spring.cloud.gateway:
   #========= Default Filters ========
   default-filters:
     #-- 인증 검사: JWT Token 유효성 검사
-    - AuthorizationHeaderFilter
+    #- AuthorizationHeaderFilter
 
     # Request Logging
     - name: PreLogger
