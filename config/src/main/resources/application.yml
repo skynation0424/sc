@@ -7,9 +7,9 @@ spring:
     config:
       server:
         git:
-          uri: ${GIT_URL:https://github.com:443/cna-bootcamp/subride-config.git}
-          username: ${GIT_USERNAME:hiondal}
-          password: ${GIT_TOKEN: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}
+          uri: ${GIT_URL:https://github.com:443/skynation0424/subride-config.git}
+          username: ${GIT_USERNAME:skynation0424}
+          password: ${GIT_TOKEN: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}
           #password: ${GIT_PASSWORD:passw0rd}
           search-paths:                      #base directory to search profiles
             - 'common'            #공통설정
